@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8ff8b0b2da6225a20a00aedeb8ec3afe545abc50caac33078a68158a1654a7e6"
+            "sha256": "01ab16ff2c0063876d73cf695aa33fe77e6d23a75ef120931735636f3945175f"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -727,6 +727,14 @@
             "markers": "python_version >= '3.8'",
             "version": "==2024.11.6"
         },
+        "table2ascii": {
+            "hashes": [
+                "sha256:9e28a6b34d6d83ecfa317dd2e8831b185f01cc3c4284c0c0943f074dcaa73a52"
+            ],
+            "index": "mordhau-rcon-suite",
+            "markers": "python_version >= '3.7'",
+            "version": "==1.1.3"
+        },
         "typing-extensions": {
             "hashes": [
                 "sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d",
@@ -734,6 +742,13 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==4.12.2"
+        },
+        "wcwidth": {
+            "hashes": [
+                "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859",
+                "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"
+            ],
+            "version": "==0.2.13"
         },
         "yarl": {
             "hashes": [
@@ -836,12 +851,12 @@
         },
         "flake8-async": {
             "hashes": [
-                "sha256:21db78080dfe4102f82e24447b6dcb6b9050e10da50f2f9d97b84f6f460beffd",
-                "sha256:447a057e37008e4bf16ccbac1ec1e89acd0b4725409d7be2a469c15a4d267200"
+                "sha256:2025d2a3d5bff153e912e4a5c2d3f373122f2ae28157937502e63327666416f5",
+                "sha256:8d8e5bd93ff1ff6a7e1805b6d258dd74635ca96ac6c9ae9f0fb42b53fde2bc08"
             ],
             "index": "mordhau-rcon-suite",
             "markers": "python_version >= '3.9'",
-            "version": "==24.11.1"
+            "version": "==24.11.2"
         },
         "iniconfig": {
             "hashes": [

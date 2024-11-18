@@ -35,10 +35,11 @@ class SessionTopic(Subject[SessionEvent]):
         if not put:
             raise ValueError(f"Failed to update session for {playfab_id} at {date}")
         login_date: datetime = put["login"]
+        original_username = put["user_name"]
         session_duration = date - login_date
         session_minutes = session_duration.total_seconds() / 60
         session_minutes_rounded = round(session_minutes)
-        self.on_next(SessionEvent(user_name, playfab_id, session_minutes_rounded))
+        self.on_next(SessionEvent(original_username, playfab_id, session_minutes_rounded))
         return session_minutes_rounded
 
 

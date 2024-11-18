@@ -12,6 +12,10 @@ RUN pipenv install
 
 ADD ./common/* ./common
 
+ADD ./boards/* ./boards
+
+ADD ./database/* ./database
+
 ADD ./config_client/* ./config_client
 
 ADD ./migrant_titles/* ./migrant_titles

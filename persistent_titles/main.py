@@ -3,7 +3,6 @@ import asyncio
 from motor.motor_asyncio import AsyncIOMotorCollection
 from reactivex import operators
 from reactivex import Observable
-from persistent_titles.database import load_db
 from persistent_titles.login_observer import LoginObserver
 from persistent_titles.chat_observer import ChatObserver
 from persistent_titles.session_topic import SessionTopic
@@ -55,15 +54,17 @@ class PersistentTitles:
             operators.filter(lambda x: x.startswith("Login:"))
         ).subscribe(session_topic_login_handler)
 
-    async def start(self):
+    async def start(
+        self,
+        db_collections: tuple[AsyncIOMotorCollection, AsyncIOMotorCollection] | None,
+    ):
         playtime_collection: AsyncIOMotorCollection | None = None
         playtime_client: PlaytimeClient | None = None
         live_sessions_collection: AsyncIOMotorCollection | None = None
         playtime_enabled = False
-        db = load_db()
-        if db:
+        if db_collections:
             logger.info("Enabling playtime titles as DB is loaded")
-            (live_sessions_collection, playtime_collection) = db
+            (live_sessions_collection, playtime_collection) = db_collections
             playtime_client = PlaytimeClient(playtime_collection)
             playtime_enabled = True
         else:

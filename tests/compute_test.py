@@ -1,4 +1,4 @@
-from persistent_titles.compute import (
+from common.compute import (
     compute_gate,
     compute_next_gate,
     compute_gate_text,

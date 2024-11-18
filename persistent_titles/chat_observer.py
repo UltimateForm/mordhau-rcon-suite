@@ -1,7 +1,7 @@
 import asyncio
 from reactivex import Observer
 from config_client.data import Config
-from persistent_titles.compute import (
+from common.compute import (
     compute_gate_text,
     compute_next_gate_text,
     compute_time_txt,

@@ -2,7 +2,7 @@ import asyncio
 from reactivex import Observer
 from common.models import LoginEvent
 from persistent_titles.playtime_client import PlaytimeClient
-from persistent_titles.compute import compute_gate_text
+from common.compute import compute_gate_text
 from config_client.data import Config
 from rcon.rcon import RconContext
 from rcon.rcon_listener import RconListener

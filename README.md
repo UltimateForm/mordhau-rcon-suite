@@ -19,6 +19,7 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles
       - [.env Config](#env-config)
       - [FAQ](#faq)
     - [Discord usage](#discord-usage)
+      - [Boards](#boards)
     - [Important notes](#important-notes)
 
 ## Usage
@@ -31,12 +32,15 @@ You need at least Docker installed and a terminal that can run .sh files (linux 
     1. RCON_PASSWORD
     1. RCON_ADDRESS
     1. RCON_PORT
-    2. RCON_CONNECT_TIMEOUT (optional)
-    3. D_TOKEN (discord bot auth token)
-    4. TITLE (optional)
-    5. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
-    7. DB_CONNECTION_STRING (optional, for [playtime titles](#playtime-titles))
-    8. DB_NAME (optiona, for [playtime titles](#playtime-titles))
+    3. RCON_CONNECT_TIMEOUT (optional)
+    4. DB_NAME
+    5. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
+    6. PLAYTIME_REFRESH_TIME (time interval for playtime scoreboard update)
+    7. D_TOKEN (discord bot auth token)
+    8. TITLE (optional)
+    9. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
+    10. DB_CONNECTION_STRING (optional, for [playtime titles](#playtime-titles))
+
 2. run `sh restart.sh` in terminal
     1. if you're familar with docker or python you don't necessarily need to this, you can run this bot anywhere and however you want
 
@@ -50,6 +54,8 @@ D_TOKEN=sNb5gkzmvnJ8W9rxHP23kNV5s7GDwtY4J4cY4JNbbM5Bctd8UFURsv8TAShsPdPDXFcaai2W
 TITLE=KING
 DB_CONNECTION_STRING=mongodb+srv://yourMongoDbUser:yourSafeMongoDbPsw@url.to.mongodb.net
 DB_NAME=mordhau
+PLAYTIME_CHANNEL=1941542230754205341
+PLAYTIME_REFRESH_TIME=1800
 ```
 
 
@@ -190,6 +196,16 @@ Commands:
 - .ptConf
   - shows full config
   - example: `.ptConf`
+
+
+#### Boards
+
+Configure the bot to send scoreboard by setting the PLAYTIME_CHANNEL variable in .env.
+
+You can additionally configure PLAYTIME_REFRESH_TIME as well to define the time interval for the update, by default it is 60 seconds which corresponds to 1 minute. here are examples for other values:
+- 1 hour: 3600
+- 30 minutes: 1800
+- 1 day: 86400
 
 
 ### Important notes

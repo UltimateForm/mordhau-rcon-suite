@@ -12,6 +12,7 @@ dacite = "*"
 python-dotenv = "*"
 numpy = "*"
 motor = "*"
+table2ascii = "*"
 
 [dev-packages]
 flake8 = "*"

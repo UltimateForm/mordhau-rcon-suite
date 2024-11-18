@@ -1,18 +1,28 @@
 import asyncio
+import os
 from dotenv import load_dotenv
 from common import logger
 from common.models import LoginEvent
+from common.discord import common_intents
+from database.main import load_db
 from persistent_titles.main import PersistentTitles
 from migrant_titles.main import MigrantTitles, MigrantComputeEvent
 from rcon.rcon_listener import RconListener
+
+from boards.playtime import PlayTimeScoreboard
 
 load_dotenv()
 
 
 async def main():
+    db_collections = load_db()
     login_listener = RconListener(event="login", listening=False)
     migrant_titles = MigrantTitles(login_listener)
     peristent_titles = PersistentTitles(login_listener)
+    playtime_channel = int(os.environ.get("PLAYTIME_CHANNEL", 0))
+    playtime_scoreboard = PlayTimeScoreboard(
+        playtime_channel, db_collections[1], common_intents
+    )
 
     def handle_tag_for_removed_rex(event: MigrantComputeEvent):
         logger.debug(f"handle_tag_for_removed_rex {event}")
@@ -25,10 +35,12 @@ async def main():
         )
 
     migrant_titles.rex_compute.subscribe(handle_tag_for_removed_rex)
+
     await asyncio.gather(
         login_listener.start(),
         migrant_titles.start(),
-        peristent_titles.start(),
+        peristent_titles.start(db_collections),
+        playtime_scoreboard.start(token=os.environ.get("D_TOKEN")),
     )
 
 
