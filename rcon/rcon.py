@@ -1,13 +1,10 @@
-# a lot of the code here is based on https://github.com/pmrowla/pysrcds
-# that repo is no longer being maintained so we are handling RCON on our own here
-
 import asyncio
 import struct
 import os
 from contextlib import AbstractAsyncContextManager
 from common import logger
 
-# Packet types (read more at https://developer.valvesoftware.com/wiki/Source_RCON_Protocol)
+# Packet types
 SERVERDATA_AUTH = 3
 SERVERDATA_EXECCOMMAND = 2
 DEFAULT_RCON_CONNECT_TIMEOUT = 5
@@ -50,8 +47,6 @@ def get_login_packet(pwd: str):
     return b
 
 
-# remember that you don't necessarily need to pass the credentials here,
-# it will automatically try to load from your environment variables
 class RconClient:
     _port: int
     _password: str
@@ -61,19 +56,13 @@ class RconClient:
     _counter: int
     _connect_timeout: int
 
-    def __init__(
-        self,
-        port: int | None = None,
-        timeout: int | None = None,
-        password: str | None = None,
-        address: str | None = None,
-    ) -> None:
-        self._port = port or int(os.environ["RCON_PORT"])
-        self._connect_timeout = timeout or int(
+    def __init__(self) -> None:
+        self._port = int(os.environ["RCON_PORT"])
+        self._connect_timeout = int(
             os.environ.get("RCON_CONNECT_TIMEOUT", DEFAULT_RCON_CONNECT_TIMEOUT)
         )
-        self._password = password or os.environ["RCON_PASSWORD"]
-        self._address = address or os.environ["RCON_ADDRESS"]
+        self._password = os.environ["RCON_PASSWORD"]
+        self._address = os.environ["RCON_ADDRESS"]
         self._counter = 0
 
     async def recv_pkt(self) -> RconPacket:
@@ -113,7 +102,9 @@ class RconClient:
         self._reader = reader
         self._writer = writer
         pkt_id = self.build_packet_id()
-        writer.write(RconPacket(pkt_id, SERVERDATA_AUTH, self._password).pack())
+        writer.write(
+            RconPacket(pkt_id, SERVERDATA_AUTH, self._password).pack()
+        )
         await writer.drain()
         auth_response = await self.recv_pkt()
         if auth_response.pkt_id != pkt_id:
@@ -127,16 +118,13 @@ class RconClient:
         await self._writer.drain()
         response = await self.recv_pkt()
         if response.pkt_id != pckt_id:
-            raise ValueError(
-                f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}"
-            )
+            raise ValueError(f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}")
         return response.body
 
 
-# use this one for containerizing connections
 class RconContext(RconClient, AbstractAsyncContextManager):
-    def __init__(self, **kwargs) -> None:
-        RconClient.__init__(self, **kwargs)
+    def __init__(self) -> None:
+        RconClient.__init__(self)
 
     async def __aenter__(self) -> RconClient:
         await self.authenticate()
@@ -147,20 +135,11 @@ class RconContext(RconClient, AbstractAsyncContextManager):
         await self._writer.wait_closed()
 
 
-async def main_with_context():
+async def main():
     async with RconContext() as client:
         r = await client.execute("info")
         logger.info(f"\n{r}")
 
 
-async def main_with_persistent_connection():
-    client = RconClient()
-    await client.authenticate()
-    cmd_response = await client.execute("playerlist")
-    print(cmd_response)
-    client._writer.close()
-    await client._writer.wait_closed()
-
-
 if __name__ == "__main__":
-    asyncio.run(main_with_context())
+    asyncio.run(main())

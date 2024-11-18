@@ -5,7 +5,7 @@ import logging.handlers
 def use_date_time_logger():
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(message)s",
-        level=logging.DEBUG,
+        level=logging.INFO,
         handlers=[
             logging.StreamHandler(),
             logging.FileHandler("./persist/bot.log", mode="w"),

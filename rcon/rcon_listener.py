@@ -14,16 +14,11 @@ class RconListener(Subject[str], RconClient):
 
     _listening: bool
 
-    # what is this "listening" bool for?
-    # on your server's config (i.e. Game.ini) you can set some events to be enabled by default
-    # as in, as soon as you connect to the RCON you're set up to receive that event
-    # in cases like that you want to set "listening=true" so that we don't run "listen event" redundantly
-    # which would actually turn off the event
-    def __init__(self, event: str = "chat", listening: bool = False, **kwargs) -> None:
+    def __init__(self, event: str = "chat", listening: bool = False) -> None:
         self._event = event
         self._listening = listening
         Subject.__init__(self)
-        RconClient.__init__(self, **kwargs)
+        RconClient.__init__(self)
 
     async def warmer(self):
         while True:
@@ -39,12 +34,6 @@ class RconListener(Subject[str], RconClient):
                 )
 
     async def _start(self, listening: bool = False):
-        # what is this rewarm task?
-        # depending on your RCON setup
-        # the connection will automatically close within 60 seconds if you do nothing with it
-        # this will happen even if you're listening to an event
-        # so in this self.warmer() we sending the cmd "alive" which "refreshes" the connection
-        # the "alive" cmd is sent every 100 secs by default
         rewarm_task: asyncio.Task | None = None
         try:
             logger.info(f"{self._event} listener: authenticating...")
@@ -63,7 +52,6 @@ class RconListener(Subject[str], RconClient):
             raise
 
     async def start(self):
-        # note that the listener is automatically set up to regain connection is case of trouble
         while True:
             try:
                 logger.info(f"{self._event} listener: Initiating...")

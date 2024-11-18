@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "mordhau-rcon-suite"
+
+[packages]
+asyncio = "*"
+pygrok = "*"
+reactivex = "*"
+"discord.py" = "*"
+dacite = "*"
+python-dotenv = "*"
+numpy = "*"
+motor = "*"
+
+[dev-packages]
+flake8 = "*"
+flake8-async = "*"
+pytest = "*"
+
+[scripts]
+lint = "flake8"
+
+[requires]
+python_version = "3.11.3"
+python_full_version = "3.11.3"
