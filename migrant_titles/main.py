@@ -95,14 +95,14 @@ class TitleCompute(Subject[MigrantComputeEvent]):
                 # this is a bug, boy has REX in his name but isn't actually current rex
                 self._remove_rex(killer_playfab_id, killer)
             # note: uncomment this for solo debug
-            elif killer_playfab_id == self.current_rex:
-                self.current_rex = ""
-                asyncio.create_task(
-                    self._execute_command(
-                        f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
-                    )
-                )
-                self._remove_rex(killer_playfab_id, killer)
+            # elif killer_playfab_id == self.current_rex:
+            #     self.current_rex = ""
+            #     asyncio.create_task(
+            #         self._execute_command(
+            #             f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
+            #         )
+            #     )
+            #     self._remove_rex(killer_playfab_id, killer)
         except Exception as e:
             logger.error(f"Failed to process REX tag compute, {str(e)}")
 

@@ -1,6 +1,7 @@
 import asyncio
 from dotenv import load_dotenv
 from common import logger
+from common.models import LoginEvent
 from persistent_titles.main import PersistentTitles
 from migrant_titles.main import MigrantTitles, MigrantComputeEvent
 from rcon.rcon_listener import RconListener
@@ -19,7 +20,7 @@ async def main():
             return
         asyncio.create_task(
             peristent_titles.login_observer.handle_tag(
-                {"playfabId": event.playfab_id, "userName": event.user_name}
+                LoginEvent("Login", "", event.user_name, event.playfab_id, "in")
             )
         )
 

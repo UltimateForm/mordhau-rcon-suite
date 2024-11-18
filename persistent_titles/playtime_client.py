@@ -13,13 +13,11 @@ class PlaytimeClient(Observer[SessionEvent]):
         self._collection = collection
         super().__init__()
 
-    async def add_playtime(self, playfab_id: str, minutes: int):
+    async def add_playtime(self, user_name: str, playfab_id: str, minutes: int):
         update = await self._collection.update_one(
             {"playfab_id": playfab_id},
             {
-                "$set": {
-                    "playfab_id": playfab_id,
-                },
+                "$set": {"playfab_id": playfab_id, "user_name": user_name},
                 "$inc": {"minutes": minutes},
             },
             upsert=True,
@@ -34,7 +32,7 @@ class PlaytimeClient(Observer[SessionEvent]):
         return read.get("minutes", 0) if read else 0
 
     def on_next(self, value: SessionEvent):
-        asyncio.create_task(self.add_playtime(value.playfab_id, value.minutes))
+        asyncio.create_task(self.add_playtime(value.user_name, value.playfab_id, value.minutes))
 
 
 async def main():

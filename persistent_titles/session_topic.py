@@ -23,7 +23,7 @@ class SessionTopic(Subject[SessionEvent]):
             raise ValueError(f"Could not create document for {playfab_id} at {date}")
         return str(write.inserted_id)
 
-    async def logout(self, playfab_id: str, date: datetime) -> int:
+    async def logout(self, playfab_id: str, user_name: str, date: datetime) -> int:
         put = await self._collection.find_one_and_delete(
             {
                 "playfab_id": playfab_id,
@@ -38,7 +38,7 @@ class SessionTopic(Subject[SessionEvent]):
         session_duration = date - login_date
         session_minutes = session_duration.total_seconds() / 60
         session_minutes_rounded = round(session_minutes)
-        self.on_next(SessionEvent(playfab_id, session_minutes_rounded))
+        self.on_next(SessionEvent(user_name, playfab_id, session_minutes_rounded))
         return session_minutes_rounded
 
 

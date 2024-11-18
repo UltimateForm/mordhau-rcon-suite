@@ -49,7 +49,7 @@ class PersistentTitles:
             if order == "in":
                 asyncio.create_task(session_topic.login(playfab_id, user_name, date))
             elif order == "out":
-                asyncio.create_task(session_topic.logout(playfab_id, date))
+                asyncio.create_task(session_topic.logout(playfab_id, user_name, date))
 
         self._login_observable.pipe(
             operators.filter(lambda x: x.startswith("Login:"))
