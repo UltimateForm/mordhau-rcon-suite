@@ -8,7 +8,7 @@ from persistent_titles.login_observer import LoginObserver
 from persistent_titles.chat_observer import ChatObserver
 from persistent_titles.session_topic import SessionTopic
 from persistent_titles.playtime_client import PlaytimeClient
-from common.parsers import GROK_LOGIN_EVENT, parse_date, parse_event
+from common.parsers import parse_date, parse_login_event
 from rcon.rcon_listener import RconListener
 from common import logger
 from config_client.main import config, config_bot
@@ -37,15 +37,15 @@ class PersistentTitles:
         session_topic.subscribe(playtime_client)
 
         def session_topic_login_handler(event: str):
-            (success, event_data) = parse_event(event, GROK_LOGIN_EVENT)
-            if not success:
+            event_data = parse_login_event(event)
+            if not event_data:
                 logger.debug(f"Failure at parsing login event {event}")
                 return
             logger.debug(f"LOGIN EVENT: {event_data}")
-            order = event_data["order"]
-            playfab_id = event_data["playfabId"]
-            user_name = event_data["userName"]
-            date = parse_date(event_data["date"])
+            order = event_data.instance
+            playfab_id = event_data.player_id
+            user_name = event_data.user_name
+            date = parse_date(event_data.date)
             if order == "in":
                 asyncio.create_task(session_topic.login(playfab_id, user_name, date))
             elif order == "out":

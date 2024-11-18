@@ -8,7 +8,7 @@ from persistent_titles.compute import (
 )
 from rcon.rcon import RconContext
 from persistent_titles.playtime_client import PlaytimeClient
-from common.parsers import GROK_CHAT_EVENT, parse_event
+from common.parsers import parse_chat_event
 
 
 class ChatObserver(Observer[str]):
@@ -51,12 +51,12 @@ class ChatObserver(Observer[str]):
             await client.execute(f"say {full_msg}")
 
     def on_next(self, value: str) -> None:
-        (success, event_data) = parse_event(value, GROK_CHAT_EVENT)
-        if not success:
+        event_data = parse_chat_event(value)
+        if not event_data:
             return
-        message = event_data.get("message")
-        playfab_id = event_data["playfabId"]
-        user_name = event_data["userName"]
+        message = event_data.message
+        playfab_id = event_data.player_id
+        user_name = event_data.user_name
         if message == ".playtime":
             asyncio.create_task(self.handle_playtime(playfab_id, user_name))
         elif message == ".rank":

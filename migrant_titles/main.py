@@ -2,6 +2,7 @@ from os import environ
 import asyncio
 from dataclasses import dataclass
 from reactivex import Observable, Subject
+from common.models import KillfeedEvent
 from config_client.main import config
 from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
@@ -62,12 +63,12 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
         task.add_done_callback(callback)
 
-    def _process_killfeed_event(self, event_data: dict[str, str]):
+    def _process_killfeed_event(self, event_data: KillfeedEvent):
         try:
-            killer = event_data.get("userName", "")
-            killed = event_data.get("killedUserName", "")
-            killer_playfab_id = event_data.get("killerPlayfabId", "")
-            killed_playfab_id = event_data.get("killedPlayfabId", "")
+            killer = event_data.user_name
+            killed = event_data.killed_user_name
+            killer_playfab_id = event_data.killer_id
+            killed_playfab_id = event_data.killed_id
             if not self.current_rex and killer_playfab_id:
                 asyncio.create_task(
                     self._execute_command(
@@ -94,39 +95,39 @@ class TitleCompute(Subject[MigrantComputeEvent]):
                 # this is a bug, boy has REX in his name but isn't actually current rex
                 self._remove_rex(killer_playfab_id, killer)
             # note: uncomment this for solo debug
-            # elif killer_playfab_id == self.current_rex:
-            #     self.current_rex = ""
-            #     asyncio.create_task(
-            #         self._execute_command(
-            #             f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
-            #         )
-            #     )
-            #     self._remove_rex(killer_playfab_id, killer)
+            elif killer_playfab_id == self.current_rex:
+                self.current_rex = ""
+                asyncio.create_task(
+                    self._execute_command(
+                        f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
+                    )
+                )
+                self._remove_rex(killer_playfab_id, killer)
         except Exception as e:
             logger.error(f"Failed to process REX tag compute, {str(e)}")
 
     def process_killfeed_raw_event(self, event: str):
         logger.debug(f"EVENT: {event}")
-        (success, event_data) = parsers.parse_event(event, parsers.GROK_KILLFEED_EVENT)
-        if success:
+        event_data = parsers.parse_killfeed_event(event)
+        if event_data:
             self._process_killfeed_event(event_data)
 
     def process_login_raw_event(self, event: str):
         logger.debug(f"EVENT: {event}")
-        (success, event_data) = parsers.parse_event(event, parsers.GROK_LOGIN_EVENT)
-        if not success:
+        event_data = parsers.parse_login_event(event)
+        if not event_data:
             return
 
-        event_order = event_data.get("order", "")
+        event_order = event_data.instance
         if event_order == "out":
-            logged_out_playfab_id = event_data.get("playfabId", None)
+            logged_out_playfab_id = event_data.player_id
             if logged_out_playfab_id and logged_out_playfab_id in self.users_map.keys():
                 self.users_map.pop(logged_out_playfab_id)
             if self.current_rex == logged_out_playfab_id:
                 self.current_rex = ""
         else:
-            playfab_id = event_data.get("playfabId", None)
-            username = event_data.get("userName", None)
+            playfab_id = event_data.player_id
+            username = event_data.user_name
             if playfab_id and username:
                 self.users_map[playfab_id] = username
 
