@@ -1,0 +1,6 @@
+-i https://pypi.org/simple
+asyncio==3.4.3
+pygrok==1.0.0
+reactivex==4.0.4; python_version >= '3.7' and python_version < '4.0'
+regex==2024.9.11; python_version >= '3.8'
+typing-extensions==4.12.2; python_version >= '3.8'
