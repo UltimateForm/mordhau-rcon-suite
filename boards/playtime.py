@@ -77,7 +77,7 @@ Bot source: https://github.com/UltimateForm/mordhau-rcon-suite
         else:
             await self._current_message.edit(embed=embed)
 
-    @tasks.loop(minutes=BOARD_REFRESH_TIME)
+    @tasks.loop(seconds=BOARD_REFRESH_TIME)
     async def job(self):
         await self.send_board()
 

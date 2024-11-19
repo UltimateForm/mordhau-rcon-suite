@@ -35,7 +35,7 @@ You need at least Docker installed and a terminal that can run .sh files (linux 
     3. RCON_CONNECT_TIMEOUT (optional)
     4. DB_NAME
     5. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
-    6. PLAYTIME_REFRESH_TIME (time interval for playtime scoreboard update)
+    6. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
     7. D_TOKEN (discord bot auth token)
     8. TITLE (optional)
     9. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
