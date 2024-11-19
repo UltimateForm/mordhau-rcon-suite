@@ -36,10 +36,12 @@ You need at least Docker installed and a terminal that can run .sh files (linux 
     4. DB_NAME
     5. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
     6. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
-    7. D_TOKEN (discord bot auth token)
-    8. TITLE (optional)
-    9. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
-    10. DB_CONNECTION_STRING (optional, for [playtime titles](#playtime-titles))
+    7. INFO_CHANNEL (optional, channel to post server info)
+    8. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
+    9.  D_TOKEN (discord bot auth token)
+    10. TITLE (optional)
+    11. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
+    12. DB_CONNECTION_STRING (optional, for [playtime titles](#playtime-titles))
 
 2. run `sh restart.sh` in terminal
     1. if you're familar with docker or python you don't necessarily need to this, you can run this bot anywhere and however you want

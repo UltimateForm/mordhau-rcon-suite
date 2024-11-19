@@ -31,3 +31,33 @@ def test_parses_killfeed_event():
     )
     event_parsed = parsers.parse_killfeed_event(event_raw)
     assert event_expected == event_parsed
+
+
+def test_parses_server_info():
+    event_raw = "HostName: TEST_DEKSTOP\nServerName: Server\nVersion: Release 26, Revision 25635, Enforced 1, Release Ver: 7\nGameMode: Skirmish\nMap: Grad\n\x00\x00"
+    expected_data = models.ServerInfo(
+        "TEST_DEKSTOP",
+        "Server",
+        "Release 26, Revision 25635, Enforced 1, Release Ver: 7",
+        "Skirmish",
+        "Grad",
+    )
+    parsed_data = parsers.parse_server_info(event_raw)
+    assert parsed_data == expected_data
+
+
+def test_parses_playerlist_row():
+    raw_row = "SA213123AKA872, John Wayne (smartass), 32 ms, team 0"
+    expected_data = models.PlayerListRow("SA213123AKA872", "John Wayne (smartass)")
+    parsed_data = parsers.parse_playerlist_row(raw_row)
+    assert parsed_data == expected_data
+
+
+def test_parses_playerlist():
+    raw_row = "SA213123AKA872, John Wayne (smartass), 32 ms, team 0\nASDDU1231215GR, Blattant Ottobloking, 32 ms, team 0\n3 bots"
+    expected_data = [
+        models.PlayerListRow("SA213123AKA872", "John Wayne (smartass)"),
+        models.PlayerListRow("ASDDU1231215GR", "Blattant Ottobloking"),
+    ]
+    parsed_data = parsers.parse_playerlist(raw_row)
+    assert parsed_data == expected_data

@@ -1,6 +1,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
+from boards.info import InfoBoard
 from common import logger
 from common.models import LoginEvent
 from common.discord import common_intents
@@ -20,6 +21,7 @@ async def main():
     migrant_titles = MigrantTitles(login_listener)
     peristent_titles = PersistentTitles(login_listener)
     playtime_channel = int(os.environ.get("PLAYTIME_CHANNEL", 0))
+
     playtime_scoreboard = PlayTimeScoreboard(
         playtime_channel, db_collections[1], common_intents
     )
@@ -35,13 +37,17 @@ async def main():
         )
 
     migrant_titles.rex_compute.subscribe(handle_tag_for_removed_rex)
-
-    await asyncio.gather(
+    tasks = [
         login_listener.start(),
         migrant_titles.start(),
         peristent_titles.start(db_collections),
         playtime_scoreboard.start(token=os.environ.get("D_TOKEN")),
-    )
+    ]
+    info_channel = int(os.environ.get("INFO_CHANNEL", 0))
+    if info_channel:
+        info_board = InfoBoard(info_channel, common_intents)
+        tasks.append(info_board.start(token=os.environ.get("D_TOKEN")))
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

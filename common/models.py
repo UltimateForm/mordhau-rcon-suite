@@ -27,3 +27,18 @@ class ChatEvent:
     user_name: str
     channel: str
     message: str
+
+
+@dataclass
+class ServerInfo:
+    host: str
+    server_name: str
+    version: str
+    game_mode: str
+    map: str
+
+
+@dataclass
+class PlayerListRow:
+    player_id: str
+    user_name: str
