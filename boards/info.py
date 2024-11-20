@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from common import logger, parsers
 
 from common.compute import compute_time_txt
-from rcon.rcon import RconClient
+from rcon.rcon import RconContext
 
 BOARD_REFRESH_TIME = int(os.environ.get("INFO_REFRESH_TIME", 30))
 
@@ -30,10 +30,11 @@ class InfoBoard(discord.Client):
         self.job.start()
 
     async def send_board(self):
-        rcon_client = RconClient()
-        await rcon_client.authenticate()
-        server_info_raw = await rcon_client.execute("info")
-        player_list_raw = await rcon_client.execute("playerlist")
+        server_info_raw: str = ""
+        player_list_raw: str = ""
+        async with RconContext() as client:
+            server_info_raw = await client.execute("info")
+            player_list_raw = await client.execute("playerlist")
         server_info = parsers.parse_server_info(server_info_raw)
         players = parsers.parse_playerlist(player_list_raw)
         players_text = (
@@ -51,7 +52,9 @@ class InfoBoard(discord.Client):
         )
         embed.add_field(name="Server Name", value=server_info.server_name)
         embed.add_field(name="Gamemode", value=server_info.game_mode)
-        embed.add_field(name=f"Players ({len(players)})", value=players_block, inline=False)
+        embed.add_field(
+            name=f"Players ({len(players)})", value=players_block, inline=False
+        )
         embed.set_footer(
             text=f"""
 Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
