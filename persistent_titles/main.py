@@ -1,6 +1,6 @@
 import os
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from reactivex import operators
 from reactivex import Observable
 from persistent_titles.login_observer import LoginObserver
@@ -56,15 +56,16 @@ class PersistentTitles:
 
     async def start(
         self,
-        db_collections: tuple[AsyncIOMotorCollection, AsyncIOMotorCollection] | None,
+        db: AsyncIOMotorDatabase | None,
     ):
         playtime_collection: AsyncIOMotorCollection | None = None
         playtime_client: PlaytimeClient | None = None
         live_sessions_collection: AsyncIOMotorCollection | None = None
         playtime_enabled = False
-        if db_collections:
+        if db is not None:
             logger.info("Enabling playtime titles as DB is loaded")
-            (live_sessions_collection, playtime_collection) = db_collections
+            playtime_collection = db["playtime"]
+            live_sessions_collection = db["live_session"]
             playtime_client = PlaytimeClient(playtime_collection)
             playtime_enabled = True
         else:

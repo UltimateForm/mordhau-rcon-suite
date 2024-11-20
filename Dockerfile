@@ -14,6 +14,8 @@ ADD ./common/* ./common
 
 ADD ./boards/* ./boards
 
+ADD ./db-kills/* ./db-kills
+
 ADD ./database/* ./database
 
 ADD ./config_client/* ./config_client

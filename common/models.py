@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -42,3 +42,15 @@ class ServerInfo:
 class PlayerListRow:
     player_id: str
     user_name: str
+
+
+@dataclass
+class KillRecord:
+    player_id: str
+    user_name: str
+    kills: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
+class PlayerStore:
+    players: dict[str, str] = field(default_factory=dict)

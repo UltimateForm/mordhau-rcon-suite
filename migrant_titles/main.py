@@ -2,7 +2,7 @@ from os import environ
 import asyncio
 from dataclasses import dataclass
 from reactivex import Observable, Subject
-from common.models import KillfeedEvent
+from common.models import KillfeedEvent, PlayerStore
 from config_client.main import config
 from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
@@ -23,10 +23,11 @@ class MigrantComputeEvent:
 class TitleCompute(Subject[MigrantComputeEvent]):
     current_rex: str = ""
     rex_tile: str = ""
-    users_map: dict[str, str] = {}
+    _player_store: PlayerStore
 
-    def __init__(self):
+    def __init__(self, player_store: PlayerStore):
         self.rex_tile = environ.get("TITLE", DEFAULT_REX_TITLE)
+        self._player_store = player_store
         super().__init__()
 
     async def _execute_command(self, command: str):
@@ -34,7 +35,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
             await client.execute(command)
 
     def _sanitize_name(self, playfab_id: str, current_name: str):
-        login_username = self.users_map.get(playfab_id, None)
+        login_username = self._player_store.players.get(playfab_id, None)
         rename = config.rename.get(playfab_id, None)
         target_name = rename or login_username or current_name
         return target_name.replace(f"[{self.rex_tile}]", "").lstrip()
@@ -121,42 +122,43 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         event_order = event_data.instance
         if event_order == "out":
             logged_out_playfab_id = event_data.player_id
-            if logged_out_playfab_id and logged_out_playfab_id in self.users_map.keys():
-                self.users_map.pop(logged_out_playfab_id)
+            if (
+                logged_out_playfab_id
+                and logged_out_playfab_id in self._player_store.players.keys()
+            ):
+                self._player_store.players.pop(logged_out_playfab_id)
             if self.current_rex == logged_out_playfab_id:
                 self.current_rex = ""
         else:
             playfab_id = event_data.player_id
             username = event_data.user_name
             if playfab_id and username:
-                self.users_map[playfab_id] = username
+                self._player_store[playfab_id] = username
 
 
 class MigrantTitles:
-    _login_observable: Observable[str]
-    _killfeed_listener: RconListener
+    _killfeed_observable: Observable[str]
     rex_compute: TitleCompute
 
-    def __init__(self, login_observable: Observable[str]):
-        self._login_observable = login_observable
-        self._killfeed_listener = RconListener(event="killfeed", listening=False)
-        self.rex_compute = TitleCompute()
-        self._killfeed_listener.subscribe(self.rex_compute.process_killfeed_raw_event)
-        self._login_observable.subscribe(self.rex_compute.process_login_raw_event)
+    def __init__(self, killfeed_listener: Observable[str], player_store: PlayerStore):
+        self._killfeed_observable = killfeed_listener
+        self.rex_compute = TitleCompute(player_store)
+        self._killfeed_observable.subscribe(self.rex_compute.process_killfeed_raw_event)
 
-    async def start(self):
-        await self._killfeed_listener.start()
+    # async def start(self):
+    #     await self._killfeed_observable.start()
 
 
-async def start_migrant_titles(login_observable: Observable[str]):
-    migrant_titles = MigrantTitles(login_observable)
-    await migrant_titles.start()
+# async def start_migrant_titles(login_observable: Observable[str]):
+#     migrant_titles = MigrantTitles(login_observable)
+#     await migrant_titles.start()
 
 
 async def main():
     login_listener = RconListener(event="login", listening=False)
-    migrant_titles = MigrantTitles(login_listener)
-    await asyncio.gather(login_listener.start(), migrant_titles.start())
+    killfeed_listener = RconListener(event="killfeed", listening=False)
+    MigrantTitles(killfeed_listener, login_listener)
+    await asyncio.gather(killfeed_listener.start(), login_listener.start())
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from pygrok import Grok
 
 from common.models import (
     ChatEvent,
+    KillRecord,
     KillfeedEvent,
     LoginEvent,
     PlayerListRow,
@@ -71,3 +72,21 @@ def parse_playerlist(raw: str) -> list[PlayerListRow]:
     rows = raw.splitlines()
     rows_parsed = [parse_playerlist_row(row) for row in rows]
     return [row for row in rows_parsed if row]
+
+
+def transform_kill_record_to_db(record: KillRecord) -> tuple[list[dict], dict]:
+    update = {
+        "$set": {"playfab_id": record.player_id, "user_name": record.user_name},
+        "$inc": {},
+    }
+    death_updates = []
+
+    total = 0
+    for id, count in record.kills.items():
+        update["$inc"][f"kills.{id}"] = count
+        death_updates.append(
+            {"$set": {"playfab_id": id}, "$inc": {"death_count": count}}
+        )
+        total += count
+    update["$inc"]["kill_count"] = total
+    return (death_updates, update)

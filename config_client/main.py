@@ -2,7 +2,12 @@ import os
 import json
 import discord
 from discord.ext import commands
+from common.compute import compute_time_txt
 from config_client.data import Config, load_config, save_config
+from motor.motor_asyncio import (
+    AsyncIOMotorDatabase,
+)
+import re
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,9 +17,11 @@ config_bot = commands.Bot(command_prefix=".", intents=intents)
 config: Config = load_config()
 
 
-def make_embed(ctx: commands.Context):
+def make_embed(ctx: commands.Context, footer=""):
     embed = discord.embeds.Embed(title=ctx.command, color=3447003)  # blue
-    embed.set_footer(text="persistentTitles")
+    embed.set_footer(
+        text="Bot source: https://github.com/UltimateForm/mordhau-rcon-suite"
+    )
     return embed
 
 
@@ -25,7 +32,7 @@ async def ping(ctx: commands.Context):
 
 # TODO: create custom decorator so we dont have to repeat error handling in all the below commands
 
-bot_channel = int(os.environ.get("BOT_CHANNEL", "0"))
+bot_channel = int(os.environ.get("CONFIG_BOT_CHANNEL", "0"))
 
 
 @config_bot.command("setTagFormat")
@@ -256,3 +263,81 @@ async def get_config(ctx: commands.Context):
         embed.add_field(name="Error", value=str(e), inline=False)
         embed.color = 15548997  # red
     await ctx.message.reply(embed=embed, content=json_code if too_long else None)
+
+
+# PLAYER COMMANDS
+
+
+DATABASE: AsyncIOMotorDatabase | None = None
+
+
+class KdrConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        collection = DATABASE["kills"]
+        query: dict = {}
+        if re.search(r"^([\S]{15,16})+$", argument):
+            query = {"playfab_id": argument}
+        else:
+            query = {"user_name": {"$regex": argument}}
+        kill_rec: dict = await collection.find_one(query)
+        embed = make_embed(ctx)
+        try:
+            if kill_rec is None:
+                raise Exception("Not found")
+
+            user_name = kill_rec.get("user_name", "<Unknown>")
+            kill_count = kill_rec.get("kill_count", 0)
+            rank = await collection.count_documents({"kill_count": {"$gt": kill_count}})
+            death_count = kill_rec.get("death_count", 0)
+            ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
+            embed.add_field(name="Rank", value=rank + 1, inline=False)
+            embed.add_field(name="PlayfabId", value=kill_rec["playfab_id"])
+            embed.add_field(name="Username", value=user_name)
+            embed.add_field(name=chr(173), value=chr(173))
+            embed.add_field(name="Kills", value=kill_count)
+            embed.add_field(name="Deaths", value=death_count)
+            embed.add_field(name="Ratio", value=ratio)
+        except Exception as e:
+            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997  # red
+        return embed
+
+
+class PlaytimeConverter(commands.Converter):
+    async def convert(self, ctx, argument):
+        collection = DATABASE["playtime"]
+        query: dict = {}
+        if re.search(r"^([\S]{15,16})+$", argument):
+            query = {"playfab_id": argument}
+        else:
+            query = {"user_name": {"$regex": argument}}
+        playtime_rec: dict = await collection.find_one(query)
+        embed = make_embed(ctx)
+        try:
+            if playtime_rec is None:
+                raise Exception("Not found")
+
+            user_name = playtime_rec.get("user_name", "<Unknown>")
+            minutes = playtime_rec.get("minutes", 0)
+            rank = await collection.count_documents({"minutes": {"$gt": minutes}})
+            time_txt = compute_time_txt(minutes)
+            embed.add_field(name="Rank", value=rank + 1, inline=False)
+            embed.add_field(name="PlayfabId", value=playtime_rec["playfab_id"])
+            embed.add_field(name="Username", value=user_name)
+            embed.add_field(name="Time played", value=time_txt, inline=False)
+        except Exception as e:
+            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997  # red
+        return embed
+
+
+@config_bot.command("kdr")
+async def kdr(ctx: commands.Context, arg_target: KdrConverter):
+    await ctx.send(embed=arg_target)
+
+
+@config_bot.command("playtime")
+async def playtime(ctx: commands.Context, arg_target: PlaytimeConverter):
+    await ctx.send(embed=arg_target)

@@ -1,12 +1,14 @@
 import os
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
-    AsyncIOMotorCollection,
+    AsyncIOMotorDatabase,
 )
 from common import logger
 
+LOADED_DB: AsyncIOMotorDatabase = None
 
-def load_db() -> tuple[AsyncIOMotorCollection, AsyncIOMotorCollection] | None:
+
+def load_db() -> AsyncIOMotorDatabase:
     db_connection = os.environ.get("DB_CONNECTION_STRING", None)
     db_name = os.environ.get("DB_NAME", None)
     if db_name is None or db_connection is None:
@@ -16,6 +18,4 @@ def load_db() -> tuple[AsyncIOMotorCollection, AsyncIOMotorCollection] | None:
         return None
     db_client = AsyncIOMotorClient(db_connection)
     database = db_client[db_name]
-    playtime_collection = database["playtime"]
-    live_sessions_collection = database["live_session"]
-    return (live_sessions_collection, playtime_collection)
+    return database

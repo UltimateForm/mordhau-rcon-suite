@@ -1,11 +1,19 @@
 # mordhau-rcon-suite
 
-This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles
+This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which adds the following new features:
+- recording kills
+- sending scoreboards to discord
+  - kills
+  - playtime
+- player list/server info
 
+## Contents
 
 - [mordhau-rcon-suite](#mordhau-rcon-suite)
-  - [Usage](#usage)
-    - [Setup](#setup)
+  - [Contents](#contents)
+  - [Setup](#setup)
+    - [Source](#source)
+    - [REQUIRED MONGODB TABLES (COLLECTIONS)](#required-mongodb-tables-collections)
     - [Example .env](#example-env)
   - [mordhauMigrantTitles](#mordhaumigranttitles)
     - [What it do?](#what-it-do)
@@ -14,18 +22,21 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles
   - [mordhauPersistentTitles](#mordhaupersistenttitles)
     - [What it do?](#what-it-do-1)
     - [Playtime Titles](#playtime-titles)
-      - [REQUIRED TABLES (COLLECTIONS)](#required-tables-collections)
       - [Ingame features](#ingame-features)
       - [.env Config](#env-config)
       - [FAQ](#faq)
-    - [Discord usage](#discord-usage)
-      - [Boards](#boards)
+  - [Discord usage](#discord-usage)
+    - [Config commands](#config-commands)
+    - [Player commands](#player-commands)
+    - [Boards](#boards)
+      - [Playtime records](#playtime-records)
+      - [Kill records](#kill-records)
     - [Important notes](#important-notes)
 
-## Usage
+## Setup
 You need at least Docker installed and a terminal that can run .sh files (linux or unix-like system)
 
-### Setup
+### Source
 
 1. clone repo or download code
 1. create .env file in same folder as code with these parameters:
@@ -36,12 +47,26 @@ You need at least Docker installed and a terminal that can run .sh files (linux 
     4. DB_NAME
     5. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
     6. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
-    7. INFO_CHANNEL (optional, channel to post server info)
-    8. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
-    9.  D_TOKEN (discord bot auth token)
-    10. TITLE (optional)
-    11. BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel)
-    12. DB_CONNECTION_STRING (optional, for [playtime titles](#playtime-titles))
+    7. KILLS_CHANNEL (channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
+    8. KILLS_REFRESH_TIME (time interval in seconds for kills/death/ratio scoreboard update)
+    9. INFO_CHANNEL (optional, channel to post server info)
+    10. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
+    11. D_TOKEN (discord bot auth token)
+    12. TITLE (optional)
+    13. CONFIG_BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel, only applies to commands from [Config commands](#config-commands))
+    14. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
+
+### REQUIRED MONGODB TABLES (COLLECTIONS)
+(If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
+
+You will need to at least have 2 tables created for playtime titles:
+1. `live_session`: this is where sessions are ephemeraly stored
+   1. while ingame users will have records in this table with their login time
+   2. when users logout of game session time is calculated and record is deleted
+2. `playtime`
+   1. this is where playtimes are stored, in minutes
+3. `kills`
+   1. this is where kill records are stored
 
 2. run `sh restart.sh` in terminal
     1. if you're familar with docker or python you don't necessarily need to this, you can run this bot anywhere and however you want
@@ -58,6 +83,8 @@ DB_CONNECTION_STRING=mongodb+srv://yourMongoDbUser:yourSafeMongoDbPsw@url.to.mon
 DB_NAME=mordhau
 PLAYTIME_CHANNEL=1941542230754205341
 PLAYTIME_REFRESH_TIME=1800
+KILLS_CHANNEL=1213542630756065341
+KILLS_REFRESH_TIME=1800
 ```
 
 
@@ -106,16 +133,6 @@ Check here for how to get started: https://www.mongodb.com/pricing
 
 Make sure your instance is located geographically close to bot for best performance
 
-#### REQUIRED TABLES (COLLECTIONS)
-(If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
-
-You will need to at least have 2 tables created for playtime titles:
-1. `live_session`: this is where sessions are ephemeraly stored
-   1. while ingame users will have records in this table with their login time
-   2. when users logout of game session time is calculated and record is deleted
-2. `playtime`
-   1. this is where playtimes are stored, in minutes
-
 #### Ingame features
 - players will have playtime titles appended to their names according to how long they have played on your server
 - playtime titles are replaced by titles added via `.addTag PLAYFABID`
@@ -157,9 +174,13 @@ You will need to at least have 2 tables created for playtime titles:
       }
       ```
 
-### Discord usage
+## Discord usage 
 
 I will not tell you here how to setup a discord bot, there's already plenty of guides about that. The bot code here does not manage permissions so it's on you to manage the access.
+
+### Config commands 
+
+These commands just apply to Persistent Titles
 
 Commands:
 - .setTagFormat {tag format}
@@ -200,7 +221,20 @@ Commands:
   - example: `.ptConf`
 
 
-#### Boards
+### Player commands
+
+Commands:
+- .kdr {playfab id or username}
+  - gets kdr score for player
+  - example: `.kdr D98123JKAS78354`
+- .playtime {playfab id or username}
+  - gets playtime score for player
+  - example: `.playtime D98123JKAS78354`
+
+### Boards
+
+
+#### Playtime records
 
 Configure the bot to send scoreboard by setting the PLAYTIME_CHANNEL variable in .env.
 
@@ -209,6 +243,37 @@ You can additionally configure PLAYTIME_REFRESH_TIME as well to define the time 
 - 30 minutes: 1800
 - 1 day: 86400
 
+Example board with random usernames:
+```
+╔══════════════════════════════════════╗
+║ Rank       Username          Time    ║
+╟──────────────────────────────────────╢
+║  1     8405a755c348fa4e    4.3 hours ║
+║  2     9c6889583047dea2     2 hours  ║
+║  3     5eb7fee0d776dc19    1.1 hours ║
+║  4     1f1aafc1ce0cddec     20 mins  ║
+╚══════════════════════════════════════╝
+```
+
+#### Kill records
+
+Configure the bot to send kils records by setting the KILLS_CHANNEL variable in .env.
+
+You can additionally configure KILLS_REFRESH_TIME as well to define the time interval for the update, by default it is 60 seconds which corresponds to 1 minute. here are examples for other values:
+- 1 hour: 3600
+- 30 minutes: 1800
+- 1 day: 86400
+
+Example board with random usernames:
+```
+╔════════════════════════════════════════════════════╗
+║ Rank            Username            K    D     R   ║
+╟────────────────────────────────────────────────────╢
+║  1          6f556ec20719e801        58   8    7.25 ║
+║  2          c6d33b6b54c92def        23   12   1.92 ║
+║  3          f954c2dd45f76295        22   11   2.0  ║
+╚════════════════════════════════════════════════════╝
+```
 
 ### Important notes
 1. This bot doesn't use (yet) the native discord commands
