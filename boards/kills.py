@@ -1,4 +1,6 @@
+import asyncio
 import os
+import aiofiles
 import discord
 from discord.ext import tasks
 from datetime import datetime, timezone
@@ -13,11 +15,13 @@ from common.compute import compute_time_txt
 BOARD_REFRESH_TIME = int(os.environ.get("KILLS_REFRESH_TIME", 60))
 
 
+# TODO: create base class for these boards, too much duplication
 class KillsScoreboard(discord.Client):
     _channel_id: int = 0
     _channel: discord.TextChannel | None = None
     _current_message: discord.Message | None = None
     _kills_collection: AsyncIOMotorCollection | None
+    file_path = "./persist/kills_msg_id"
 
     def __init__(
         self,
@@ -33,7 +37,28 @@ class KillsScoreboard(discord.Client):
     async def on_ready(self):
         logger.info(f"Retrieving kills scoreboard channel {self._channel_id}")
         self._channel = await self.fetch_channel(self._channel_id)
+        await self.delete_previous_message()
         self.job.start()
+
+    async def write_msg_id(self):
+        async with aiofiles.open(self.file_path, "w") as file:
+            await file.write(str(self._current_message.id))
+
+    async def delete_previous_message(self) -> str | None:
+        try:
+            file_exists = await aiofiles.os.path.exists(self.file_path)
+            if not file_exists:
+                return
+            msg_id: str | None = ""
+            async with aiofiles.open(self.file_path, "r") as file:
+                msg_id = await file.read()
+            if not msg_id.isdecimal():
+                return
+            parsed_msg_id = int(msg_id)
+            msg = await self._channel.fetch_message(parsed_msg_id)
+            await msg.delete()
+        except Exception as e:
+            logger.error(f"KillsScoreboard: Error deleting existing board: {e}")
 
     def compute_kdr(self, record: dict) -> list[str]:
         user_name = record.get("user_name", None) or record.get(
@@ -79,6 +104,7 @@ Bot source: https://github.com/UltimateForm/mordhau-rcon-suite
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
+            asyncio.create_task(self.write_msg_id())
         else:
             await self._current_message.edit(embed=embed)
 

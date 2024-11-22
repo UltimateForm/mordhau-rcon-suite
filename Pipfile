@@ -13,11 +13,13 @@ python-dotenv = "*"
 numpy = "*"
 motor = "*"
 table2ascii = "*"
+aiofiles = "*"
 
 [dev-packages]
 flake8 = "*"
 flake8-async = "*"
 pytest = "*"
+faker = "*"
 
 [scripts]
 lint = "flake8"

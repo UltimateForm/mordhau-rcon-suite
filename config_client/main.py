@@ -1,13 +1,17 @@
+import asyncio
 import os
 import json
 import discord
 from discord.ext import commands
+from common import parsers
 from common.compute import compute_time_txt
 from config_client.data import Config, load_config, save_config
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 import re
+
+from rcon.rcon import RconContext
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -341,3 +345,29 @@ async def kdr(ctx: commands.Context, arg_target: KdrConverter):
 @config_bot.command("playtime")
 async def playtime(ctx: commands.Context, arg_target: PlaytimeConverter):
     await ctx.send(embed=arg_target)
+
+
+@config_bot.command("playerlist")
+async def playerlist(ctx: commands.Context):
+    embed = make_embed(ctx)
+    try:
+        player_list_raw: str = ""
+        async with asyncio.timeout(30):
+            async with RconContext() as client:
+                player_list_raw = await client.execute("playerlist")
+        players = parsers.parse_playerlist(player_list_raw)
+
+        players_text = (
+            "\n".join(
+                [f"{player.player_id} - {player.user_name}" for player in players]
+            )
+            if len(players)
+            else "No players online"
+        )
+        await ctx.reply("```" + players_text + "```")
+        return
+    except Exception as e:
+        embed.add_field(name="Success", value=False, inline=False)
+        embed.add_field(name="Error", value=str(e), inline=False)
+        embed.color = 15548997  # red
+    await ctx.message.reply(embed=embed)
