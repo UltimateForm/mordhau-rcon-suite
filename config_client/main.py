@@ -32,7 +32,7 @@ def make_embed(ctx: commands.Context, footer=""):
 async def ping(ctx: commands.Context):
     await ctx.message.reply(":ping_pong:")
 
-
+# TODO: jesus organize commands better after things calm down
 # TODO: create custom decorator so we dont have to repeat error handling in all the below commands
 
 bot_channel = int(os.environ.get("CONFIG_BOT_CHANNEL", "0"))
@@ -310,7 +310,7 @@ async def kdr(ctx: commands.Context, argument: str):
         embed.add_field(name="Success", value=False, inline=False)
         embed.add_field(name="Error", value=str(e), inline=False)
         embed.color = 15548997  # red
-    await ctx.send(embed=embed)
+    await ctx.message.reply(embed=embed)
 
 
 @config_bot.command("playtime")
@@ -338,7 +338,7 @@ async def playtime(ctx: commands.Context, argument: str):
         embed.add_field(name="Success", value=False, inline=False)
         embed.add_field(name="Error", value=str(e), inline=False)
         embed.color = 15548997  # red
-    await ctx.send(embed=embed)
+    await ctx.message.reply(embed=embed)
 
 
 @config_bot.command("playerlist")
