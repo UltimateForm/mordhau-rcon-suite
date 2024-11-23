@@ -1,6 +1,6 @@
 from datetime import datetime
 from pygrok import Grok
-
+import re
 from common.models import (
     ChatEvent,
     KillRecord,
@@ -90,3 +90,7 @@ def transform_kill_record_to_db(record: KillRecord) -> tuple[list[dict], dict]:
         total += count
     update["$inc"]["kill_count"] = total
     return (death_updates, update)
+
+
+def is_playfab_id_format(arg: str):
+    return re.search(r"^([\S]{15,16})+$", arg) is not None

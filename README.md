@@ -230,6 +230,11 @@ Commands:
 - .playtime {playfab id or username}
   - gets playtime score for player
   - example: `.playtime D98123JKAS78354`
+- .playerlist
+  - shows online players list
+- .versus {playfab id or username} {playfab id or username}
+  - shows battle tally between two players, as in how many times they've killed each other
+  - example: `.versus D98123JKAS78354 H1221A0G838D91I`
 
 ### Boards
 

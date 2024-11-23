@@ -9,7 +9,6 @@ from config_client.data import Config, load_config, save_config
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
-import re
 
 from rcon.rcon import RconContext
 
@@ -275,76 +274,71 @@ async def get_config(ctx: commands.Context):
 DATABASE: AsyncIOMotorDatabase | None = None
 
 
-class KdrConverter(commands.Converter):
-    async def convert(self, ctx, argument):
-        collection = DATABASE["kills"]
-        query: dict = {}
-        if re.search(r"^([\S]{15,16})+$", argument):
-            query = {"playfab_id": argument}
-        else:
-            query = {"user_name": {"$regex": argument}}
-        kill_rec: dict = await collection.find_one(query)
-        embed = make_embed(ctx)
-        try:
-            if kill_rec is None:
-                raise Exception("Not found")
-
-            user_name = kill_rec.get("user_name", "<Unknown>")
-            kill_count = kill_rec.get("kill_count", 0)
-            rank = await collection.count_documents({"kill_count": {"$gt": kill_count}})
-            death_count = kill_rec.get("death_count", 0)
-            ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
-            embed.add_field(name="Rank", value=rank + 1, inline=False)
-            embed.add_field(name="PlayfabId", value=kill_rec["playfab_id"])
-            embed.add_field(name="Username", value=user_name)
-            embed.add_field(name=chr(173), value=chr(173))
-            embed.add_field(name="Kills", value=kill_count)
-            embed.add_field(name="Deaths", value=death_count)
-            embed.add_field(name="Ratio", value=ratio)
-        except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
-            embed.add_field(name="Error", value=str(e), inline=False)
-            embed.color = 15548997  # red
-        return embed
-
-
-class PlaytimeConverter(commands.Converter):
-    async def convert(self, ctx, argument):
-        collection = DATABASE["playtime"]
-        query: dict = {}
-        if re.search(r"^([\S]{15,16})+$", argument):
-            query = {"playfab_id": argument}
-        else:
-            query = {"user_name": {"$regex": argument}}
-        playtime_rec: dict = await collection.find_one(query)
-        embed = make_embed(ctx)
-        try:
-            if playtime_rec is None:
-                raise Exception("Not found")
-
-            user_name = playtime_rec.get("user_name", "<Unknown>")
-            minutes = playtime_rec.get("minutes", 0)
-            rank = await collection.count_documents({"minutes": {"$gt": minutes}})
-            time_txt = compute_time_txt(minutes)
-            embed.add_field(name="Rank", value=rank + 1, inline=False)
-            embed.add_field(name="PlayfabId", value=playtime_rec["playfab_id"])
-            embed.add_field(name="Username", value=user_name)
-            embed.add_field(name="Time played", value=time_txt, inline=False)
-        except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
-            embed.add_field(name="Error", value=str(e), inline=False)
-            embed.color = 15548997  # red
-        return embed
+def rank_2_emoji(n: int):
+    rank_emoji_map = {0: ":first_place:", 1: ":second_place:", 2: ":third_place:"}
+    rank_out = rank_emoji_map.get(n, str(n + 1))
+    return rank_out
 
 
 @config_bot.command("kdr")
-async def kdr(ctx: commands.Context, arg_target: KdrConverter):
-    await ctx.send(embed=arg_target)
+async def kdr(ctx: commands.Context, argument: str):
+    collection = DATABASE["kills"]
+    query: dict = {}
+    if parsers.is_playfab_id_format(argument):
+        query = {"playfab_id": argument}
+    else:
+        query = {"user_name": {"$regex": argument}}
+    kill_rec: dict = await collection.find_one(query)
+    embed = make_embed(ctx)
+    try:
+        if kill_rec is None:
+            raise Exception("Not found")
+
+        user_name = kill_rec.get("user_name", "<Unknown>")
+        kill_count = kill_rec.get("kill_count", 0)
+        rank = await collection.count_documents({"kill_count": {"$gt": kill_count}})
+        death_count = kill_rec.get("death_count", 0)
+        ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
+        embed.add_field(name="Rank", value=rank_2_emoji(rank), inline=False)
+        embed.add_field(name="PlayfabId", value=kill_rec["playfab_id"])
+        embed.add_field(name="Username", value=user_name)
+        embed.add_field(name=chr(173), value=chr(173))
+        embed.add_field(name="Kills", value=kill_count)
+        embed.add_field(name="Deaths", value=death_count)
+        embed.add_field(name="Ratio", value=ratio)
+    except Exception as e:
+        embed.add_field(name="Success", value=False, inline=False)
+        embed.add_field(name="Error", value=str(e), inline=False)
+        embed.color = 15548997  # red
+    await ctx.send(embed=embed)
 
 
 @config_bot.command("playtime")
-async def playtime(ctx: commands.Context, arg_target: PlaytimeConverter):
-    await ctx.send(embed=arg_target)
+async def playtime(ctx: commands.Context, argument: str):
+    collection = DATABASE["playtime"]
+    query: dict = {}
+    if parsers.is_playfab_id_format(argument):
+        query = {"playfab_id": argument}
+    else:
+        query = {"user_name": {"$regex": argument}}
+    playtime_rec: dict = await collection.find_one(query)
+    embed = make_embed(ctx)
+    try:
+        if playtime_rec is None:
+            raise Exception("Not found")
+        user_name = playtime_rec.get("user_name", "<Unknown>")
+        minutes = playtime_rec.get("minutes", 0)
+        rank = await collection.count_documents({"minutes": {"$gt": minutes}})
+        time_txt = compute_time_txt(minutes)
+        embed.add_field(name="Rank", value=rank_2_emoji(rank), inline=False)
+        embed.add_field(name="PlayfabId", value=playtime_rec["playfab_id"])
+        embed.add_field(name="Username", value=user_name)
+        embed.add_field(name="Time played", value=time_txt, inline=False)
+    except Exception as e:
+        embed.add_field(name="Success", value=False, inline=False)
+        embed.add_field(name="Error", value=str(e), inline=False)
+        embed.color = 15548997  # red
+    await ctx.send(embed=embed)
 
 
 @config_bot.command("playerlist")
@@ -366,6 +360,47 @@ async def playerlist(ctx: commands.Context):
         )
         await ctx.reply("```" + players_text + "```")
         return
+    except Exception as e:
+        embed.add_field(name="Success", value=False, inline=False)
+        embed.add_field(name="Error", value=str(e), inline=False)
+        embed.color = 15548997  # red
+    await ctx.message.reply(embed=embed)
+
+
+@config_bot.command("versus")
+async def versus(ctx: commands.Context, player1: str, player2: str):
+    embed = make_embed(ctx)
+    embed.description = "(shows how many times players have killed each other)"
+    collection = DATABASE["kills"]
+    try:
+        queries: list[dict] = []
+        for player in [player1, player2]:
+            if parsers.is_playfab_id_format(player):
+                queries.append({"playfab_id": player})
+            else:
+                queries.append({"user_name": {"$regex": player}})
+        data: list[dict] = []
+        for query in queries:
+            r = await collection.find_one(query)
+            if r is None:
+                query_target = query.get(
+                    "playfab_id", query.get("user_name", {}).get("$regex", None)
+                )
+                raise Exception(f"{query_target} not found")
+            data.append(r)
+        player1_data = data[0]
+        player2_data = data[1]
+        player1_id = player1_data.get("playfab_id", None)
+        player2_id = player2_data.get("playfab_id", None)
+        player1_kills: dict = player1_data.get("kills", {})
+        player2_kills: dict = player2_data.get("kills", {})
+        embed.add_field(
+            name=player1_data.get("user_name"), value=player1_kills.get(player2_id, 0)
+        )
+        embed.add_field(name=":vs:", value="")
+        embed.add_field(
+            name=player2_data.get("user_name"), value=player2_kills.get(player1_id, 0)
+        )
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
         embed.add_field(name="Error", value=str(e), inline=False)
