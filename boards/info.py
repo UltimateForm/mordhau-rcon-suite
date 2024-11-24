@@ -76,11 +76,10 @@ class InfoBoard(discord.Client):
             current_time = round(datetime.now(timezone.utc).timestamp())
             time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
             embed = discord.Embed(
-                title=":clipboard: Server Info :clipboard:",
+                title=server_info.server_name,
                 description=time_sig,
                 color=discord.Colour(3447003),
             )
-            embed.add_field(name="Server Name", value=server_info.server_name)
             embed.add_field(name="Gamemode", value=server_info.game_mode)
             embed.add_field(name="Map", value=server_info.map)
             embed.add_field(
