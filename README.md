@@ -5,6 +5,7 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
 - sending scoreboards to discord
   - kills
   - playtime
+  - checking indivdual player playtime, killscore, and lifetime match score against another player
 - player list/server info
 
 ## Contents
