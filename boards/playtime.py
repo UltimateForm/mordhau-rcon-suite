@@ -11,6 +11,7 @@ from table2ascii import table2ascii as t2a
 from common import logger
 
 from common.compute import compute_time_txt
+from common.discord import make_embed
 
 BOARD_REFRESH_TIME = int(os.environ.get("PLAYTIME_REFRESH_TIME", 60))
 
@@ -85,17 +86,11 @@ class PlayTimeScoreboard(discord.Client):
         )
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-        embed = discord.Embed(
-            title=":clock4: PLAYTIME RECORDS (top 20) :clock4:",
+        embed = make_embed(
+            ":clock4: PLAYTIME RECORDS (top 20) :clock4:",
             description=time_sig + "\n" + ascii_table,
-            color=discord.Colour(15844367),
-        )
-        embed.set_footer(
-            text=f"""
-Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
-Unknown players will be shown by playfab id only, login and logout to capture username
-Bot source: https://github.com/UltimateForm/mordhau-rcon-suite
-                """
+            color=discord.Colour(5763719),
+            footer_txt=f"Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}\nUnknown players will be shown by playfab id only, login and logout to capture username",
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)

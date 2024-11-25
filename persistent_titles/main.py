@@ -4,7 +4,6 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from reactivex import operators
 from reactivex import Observable
 from persistent_titles.login_observer import LoginObserver
-from persistent_titles.chat_observer import ChatObserver
 from persistent_titles.session_topic import SessionTopic
 from persistent_titles.playtime_client import PlaytimeClient
 from common.parsers import parse_date, parse_login_event
@@ -27,11 +26,8 @@ class PersistentTitles:
     def enable_playtime(
         self,
         playtime_client: PlaytimeClient,
-        chat_listener: RconListener,
         live_sessions_collection: AsyncIOMotorCollection,
     ):
-        chat_observer = ChatObserver(config, playtime_client)
-        chat_listener.subscribe(chat_observer)
         session_topic = SessionTopic(live_sessions_collection)
         session_topic.subscribe(playtime_client)
 
@@ -70,15 +66,11 @@ class PersistentTitles:
             playtime_enabled = True
         else:
             logger.info("Keeping playtime titles disabled as DB is not loaded")
-        chat_listener = RconListener("chat")
         self.login_observer.playtime_client = playtime_client
-        tasks = [config_bot.start(token=os.environ.get("D_TOKEN"))]
         if playtime_enabled:
-            self.enable_playtime(
-                playtime_client, chat_listener, live_sessions_collection
-            )
-            tasks.append(chat_listener.start())
-        await asyncio.gather(*tasks)
+            self.enable_playtime(playtime_client, live_sessions_collection)
+        # TODO: config bot start should be started somewhere else since now it's including non-pt stuff
+        await config_bot.start(token=os.environ.get("D_TOKEN"))
 
 
 async def main():

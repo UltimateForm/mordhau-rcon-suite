@@ -18,6 +18,10 @@ ADD ./db-kills/* ./db-kills
 
 ADD ./database/* ./database
 
+ADD ./ingame_cmd/* ./ingame_cmd
+
+ADD ./rank_compute/* ./rank_compute
+
 ADD ./config_client/* ./config_client
 
 ADD ./migrant_titles/* ./migrant_titles

@@ -8,6 +8,7 @@ from common import logger, parsers
 from common.models import LoginEvent, PlayerStore
 from common.discord import common_intents
 from database.main import load_db
+from ingame_cmd.main import IngameCommands
 from persistent_titles.main import PersistentTitles
 from migrant_titles.main import MigrantTitles, MigrantComputeEvent
 from rcon.rcon_listener import RconListener
@@ -23,8 +24,10 @@ async def main():
     player_store = PlayerStore()
     login_listener = RconListener(event="login", listening=False)
     killfeed_listener = RconListener(event="killfeed", listening=False)
+    chat_listener = RconListener("chat")
     migrant_titles = MigrantTitles(killfeed_listener, player_store)
     peristent_titles = PersistentTitles(login_listener)
+    ingame_commands = IngameCommands(config_client.config, db)
     db_kills = DbKills(db["kills"], killfeed_listener, player_store)
     playtime_channel = int(os.environ.get("PLAYTIME_CHANNEL", 0))
     kills_channel = int(os.environ.get("KILLS_CHANNEL", 0))
@@ -49,6 +52,7 @@ async def main():
             )
 
     login_listener.subscribe(populate_player_store)
+    chat_listener.subscribe(ingame_commands)
 
     def handle_tag_for_removed_rex(event: MigrantComputeEvent):
         logger.debug(f"handle_tag_for_removed_rex {event}")
@@ -64,6 +68,7 @@ async def main():
     tasks = [
         login_listener.start(),
         killfeed_listener.start(),
+        chat_listener.start(),
         peristent_titles.start(db),
         playtime_scoreboard.start(token=d_token),
         kills_scoreboard.start(token=d_token),

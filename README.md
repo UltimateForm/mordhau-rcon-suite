@@ -26,6 +26,7 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
       - [Ingame features](#ingame-features)
       - [.env Config](#env-config)
       - [FAQ](#faq)
+  - [Ingame commands](#ingame-commands)
   - [Discord usage](#discord-usage)
     - [Config commands](#config-commands)
     - [Player commands](#player-commands)
@@ -54,8 +55,10 @@ You need at least Docker installed and a terminal that can run .sh files (linux 
     10. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
     11. D_TOKEN (discord bot auth token)
     12. TITLE (optional)
-    13. CONFIG_BOT_CHANNEL (optional id of channel if you want to limit bot use to one channel, only applies to commands from [Config commands](#config-commands))
+    13. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to commands from [Config commands](#config-commands))
     14. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
+    15. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
+    16. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
 
 ### REQUIRED MONGODB TABLES (COLLECTIONS)
 (If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
@@ -137,10 +140,6 @@ Make sure your instance is located geographically close to bot for best performa
 #### Ingame features
 - players will have playtime titles appended to their names according to how long they have played on your server
 - playtime titles are replaced by titles added via `.addTag PLAYFABID`
-- while ingame players can write `.playtime` to obtain their playtimes
-- commands
-  - `.playtime` shows player's current playtime
-  - `.rank` shows player's current and next playtime rank/tag
 
 #### .env Config
 1. DB_CONNECTION_STRING (connection string)
@@ -174,6 +173,20 @@ Make sure your instance is located geographically close to bot for best performa
         "minutes": 120
       }
       ```
+
+## Ingame commands
+
+- .playtime
+  - will show sender's playtime
+- .rank
+  - will show sender's playtime rank
+- .kdr
+  - will show sender's playtime kdr (kill, death, ratio)
+- .versus {playfab id or username of another player}
+  - will show sender lifetime match state against another player
+  - example: `.versus ocelot`
+  - DOT NOT CONFUSE WITH THE DISCORD COMMAND WHICH REQUIRES AN ADDITIONAL ARGUMENT.
+
 
 ## Discord usage 
 
@@ -236,6 +249,7 @@ Commands:
 - .versus {playfab id or username} {playfab id or username}
   - shows battle tally between two players, as in how many times they've killed each other
   - example: `.versus D98123JKAS78354 H1221A0G838D91I`
+  - DO NOT CONFUSE WITH INGAME COMMAND WHICH REQUIRES ONLY ONE ARGUMENT
 
 ### Boards
 
@@ -285,3 +299,4 @@ Example board with random usernames:
 1. This bot doesn't use (yet) the native discord commands
 2. This bot hasn't been stress tested, a previous version has been tested on a server with 20-40 players, but was different code
 3. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
+4. this BOT is RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)

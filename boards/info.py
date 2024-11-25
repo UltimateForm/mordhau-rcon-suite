@@ -7,6 +7,7 @@ from discord.ext import tasks
 from datetime import datetime, timezone
 from common import logger, parsers
 from common.compute import compute_time_txt
+from common.discord import make_embed
 from rcon.rcon import RconContext
 from itertools import takewhile
 
@@ -75,21 +76,16 @@ class InfoBoard(discord.Client):
             players_block = "```" + players_text + "```"
             current_time = round(datetime.now(timezone.utc).timestamp())
             time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-            embed = discord.Embed(
-                title=server_info.server_name,
+            embed = make_embed(
+                server_info.server_name,
                 description=time_sig,
                 color=discord.Colour(3447003),
+                footer_txt=f"Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}",
             )
             embed.add_field(name="Gamemode", value=server_info.game_mode)
             embed.add_field(name="Map", value=server_info.map)
             embed.add_field(
                 name=f"Players ({len(players)})", value=players_block, inline=False
-            )
-            embed.set_footer(
-                text=f"""
-Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
-Bot source: https://github.com/UltimateForm/mordhau-rcon-suite
-                    """
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)

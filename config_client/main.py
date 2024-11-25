@@ -4,12 +4,14 @@ import json
 import discord
 from discord.ext import commands
 from common import parsers
-from common.compute import compute_time_txt
+from common.discord import make_embed as common_make_embed
 from config_client.data import Config, load_config, save_config
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 
+from rank_compute.kills import get_kills
+from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
 
 intents = discord.Intents.default()
@@ -20,17 +22,15 @@ config_bot = commands.Bot(command_prefix=".", intents=intents)
 config: Config = load_config()
 
 
-def make_embed(ctx: commands.Context, footer=""):
-    embed = discord.embeds.Embed(title=ctx.command, color=3447003)  # blue
-    embed.set_footer(
-        text="Bot source: https://github.com/UltimateForm/mordhau-rcon-suite"
-    )
+def make_embed(ctx: commands.Context):
+    embed = common_make_embed(ctx.command, color=discord.Colour(3447003))
     return embed
 
 
 @config_bot.command()
 async def ping(ctx: commands.Context):
     await ctx.message.reply(":ping_pong:")
+
 
 # TODO: jesus organize commands better after things calm down
 # TODO: create custom decorator so we dont have to repeat error handling in all the below commands
@@ -283,29 +283,18 @@ def rank_2_emoji(n: int):
 @config_bot.command("kdr")
 async def kdr(ctx: commands.Context, argument: str):
     collection = DATABASE["kills"]
-    query: dict = {}
-    if parsers.is_playfab_id_format(argument):
-        query = {"playfab_id": argument}
-    else:
-        query = {"user_name": {"$regex": argument}}
-    kill_rec: dict = await collection.find_one(query)
     embed = make_embed(ctx)
     try:
-        if kill_rec is None:
+        kill_score = await get_kills(argument, collection)
+        if kill_score is None:
             raise Exception("Not found")
-
-        user_name = kill_rec.get("user_name", "<Unknown>")
-        kill_count = kill_rec.get("kill_count", 0)
-        rank = await collection.count_documents({"kill_count": {"$gt": kill_count}})
-        death_count = kill_rec.get("death_count", 0)
-        ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
-        embed.add_field(name="Rank", value=rank_2_emoji(rank), inline=False)
-        embed.add_field(name="PlayfabId", value=kill_rec["playfab_id"])
-        embed.add_field(name="Username", value=user_name)
+        embed.add_field(name="Rank", value=rank_2_emoji(kill_score.rank), inline=False)
+        embed.add_field(name="PlayfabId", value=kill_score.player_id)
+        embed.add_field(name="Username", value=kill_score.user_name)
         embed.add_field(name=chr(173), value=chr(173))
-        embed.add_field(name="Kills", value=kill_count)
-        embed.add_field(name="Deaths", value=death_count)
-        embed.add_field(name="Ratio", value=ratio)
+        embed.add_field(name="Kills", value=kill_score.kill_count)
+        embed.add_field(name="Deaths", value=kill_score.death_count)
+        embed.add_field(name="Ratio", value=kill_score.ratio or "-")
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
         embed.add_field(name="Error", value=str(e), inline=False)
@@ -316,24 +305,17 @@ async def kdr(ctx: commands.Context, argument: str):
 @config_bot.command("playtime")
 async def playtime(ctx: commands.Context, argument: str):
     collection = DATABASE["playtime"]
-    query: dict = {}
-    if parsers.is_playfab_id_format(argument):
-        query = {"playfab_id": argument}
-    else:
-        query = {"user_name": {"$regex": argument}}
-    playtime_rec: dict = await collection.find_one(query)
     embed = make_embed(ctx)
     try:
-        if playtime_rec is None:
+        player_score = await get_playtime(argument, collection)
+        if player_score is None:
             raise Exception("Not found")
-        user_name = playtime_rec.get("user_name", "<Unknown>")
-        minutes = playtime_rec.get("minutes", 0)
-        rank = await collection.count_documents({"minutes": {"$gt": minutes}})
-        time_txt = compute_time_txt(minutes)
-        embed.add_field(name="Rank", value=rank_2_emoji(rank), inline=False)
-        embed.add_field(name="PlayfabId", value=playtime_rec["playfab_id"])
-        embed.add_field(name="Username", value=user_name)
-        embed.add_field(name="Time played", value=time_txt, inline=False)
+        embed.add_field(
+            name="Rank", value=rank_2_emoji(player_score.rank), inline=False
+        )
+        embed.add_field(name="PlayfabId", value=player_score.player_id)
+        embed.add_field(name="Username", value=player_score.user_name)
+        embed.add_field(name="Time played", value=player_score.time_txt, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
         embed.add_field(name="Error", value=str(e), inline=False)

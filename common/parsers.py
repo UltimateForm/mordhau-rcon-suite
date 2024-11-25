@@ -6,7 +6,7 @@ from common.models import (
     KillRecord,
     KillfeedEvent,
     LoginEvent,
-    PlayerListRow,
+    Player,
     ServerInfo,
 )
 
@@ -61,14 +61,14 @@ def parse_server_info(raw: str) -> ServerInfo | None:
     return ServerInfo(**parsed)
 
 
-def parse_playerlist_row(raw: str) -> PlayerListRow | None:
+def parse_playerlist_row(raw: str) -> Player | None:
     (success, parsed) = parse_event(raw, GROK_PLAYERLIST_ROW)
     if not success:
         return None
-    return PlayerListRow(**parsed)
+    return Player(**parsed)
 
 
-def parse_playerlist(raw: str) -> list[PlayerListRow]:
+def parse_playerlist(raw: str) -> list[Player]:
     rows = raw.splitlines()
     rows_parsed = [parse_playerlist_row(row) for row in rows]
     return [row for row in rows_parsed if row]

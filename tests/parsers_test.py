@@ -48,7 +48,7 @@ def test_parses_server_info():
 
 def test_parses_playerlist_row():
     raw_row = "SA213123AKA872, John Wayne (smartass), 32 ms, team 0"
-    expected_data = models.PlayerListRow("SA213123AKA872", "John Wayne (smartass)")
+    expected_data = models.Player("SA213123AKA872", "John Wayne (smartass)")
     parsed_data = parsers.parse_playerlist_row(raw_row)
     assert parsed_data == expected_data
 
@@ -56,8 +56,8 @@ def test_parses_playerlist_row():
 def test_parses_playerlist():
     raw_row = "SA213123AKA872, John Wayne (smartass), 32 ms, team 0\nASDDU1231215GR, Blattant Ottobloking, 32 ms, team 0\n3 bots"
     expected_data = [
-        models.PlayerListRow("SA213123AKA872", "John Wayne (smartass)"),
-        models.PlayerListRow("ASDDU1231215GR", "Blattant Ottobloking"),
+        models.Player("SA213123AKA872", "John Wayne (smartass)"),
+        models.Player("ASDDU1231215GR", "Blattant Ottobloking"),
     ]
     parsed_data = parsers.parse_playerlist(raw_row)
     assert parsed_data == expected_data

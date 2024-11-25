@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from common.compute import compute_time_txt
+
 
 @dataclass
 class KillfeedEvent:
@@ -39,7 +41,7 @@ class ServerInfo:
 
 
 @dataclass
-class PlayerListRow:
+class Player:
     player_id: str
     user_name: str
 
@@ -54,3 +56,27 @@ class KillRecord:
 @dataclass
 class PlayerStore:
     players: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class PlaytimeScore(Player):
+    minutes: int
+    rank: int
+    time_txt: str = field(init=False)
+
+    def __post_init__(self):
+        self.time_txt = compute_time_txt(self.minutes)
+
+
+@dataclass
+class KillScore(Player):
+    kill_count: int
+    death_count: int
+    rank: int
+    kills: dict[str, int] = field(default_factory=dict)
+    ratio: int | None = field(init=False)
+
+    def __post_init__(self):
+        self.ratio = (
+            round(self.kill_count / self.death_count) if self.death_count > 0 else None
+        )

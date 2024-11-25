@@ -11,6 +11,7 @@ from table2ascii import table2ascii as t2a
 from common import logger
 
 from common.compute import compute_time_txt
+from common.discord import make_embed
 
 BOARD_REFRESH_TIME = int(os.environ.get("KILLS_REFRESH_TIME", 60))
 
@@ -91,16 +92,11 @@ class KillsScoreboard(discord.Client):
         )
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-        embed = discord.Embed(
-            title=":skull: KILL RECORDS (top 20) :skull:",
+        embed = make_embed(
+            ":skull: KILL RECORDS (top 20) :skull:",
             description=time_sig + "\n" + ascii_table,
-            color=discord.Colour(15844367),
-        )
-        embed.set_footer(
-            text=f"""
-Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
-Bot source: https://github.com/UltimateForm/mordhau-rcon-suite
-                """
+            color=discord.Colour(15548997),
+            footer_txt=f"Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}",
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
