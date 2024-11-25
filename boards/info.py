@@ -85,7 +85,7 @@ class InfoBoard(discord.Client):
             embed.add_field(name="Gamemode", value=server_info.game_mode)
             embed.add_field(name="Map", value=server_info.map)
             embed.add_field(
-                name=f"Players ({len(players)})", value=players_block, inline=False
+                name=f"Players online: ({len(players)})", value=players_block, inline=False
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
