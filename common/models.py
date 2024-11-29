@@ -78,5 +78,5 @@ class KillScore(Player):
 
     def __post_init__(self):
         self.ratio = (
-            round(self.kill_count / self.death_count) if self.death_count > 0 else None
+            round(self.kill_count / self.death_count, 2) if self.death_count > 0 else None
         )
