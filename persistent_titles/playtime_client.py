@@ -1,9 +1,9 @@
-from os import environ
 import asyncio
 from reactivex import Observer
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorClient
 from persistent_titles.data import SessionEvent
 from common import logger
+from config_client.data import bot_config
 
 
 class PlaytimeClient(Observer[SessionEvent]):
@@ -32,13 +32,15 @@ class PlaytimeClient(Observer[SessionEvent]):
         return read.get("minutes", 0) if read else 0
 
     def on_next(self, value: SessionEvent):
-        asyncio.create_task(self.add_playtime(value.user_name, value.playfab_id, value.minutes))
+        asyncio.create_task(
+            self.add_playtime(value.user_name, value.playfab_id, value.minutes)
+        )
 
 
 async def main():
     logger.use_date_time_logger()
-    db_connection = environ.get("DB_CONNECTION_STRING", None)
-    db_name = environ.get("DB_NAME", None)
+    db_connection = bot_config.db_connection_string
+    db_name = bot_config.db_name
     db_client = AsyncIOMotorClient(db_connection)
     database = db_client[db_name]
     collection = database["playtime"]

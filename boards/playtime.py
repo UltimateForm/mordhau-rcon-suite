@@ -1,5 +1,4 @@
 import asyncio
-import os
 import aiofiles
 import discord
 from discord.ext import tasks
@@ -12,8 +11,9 @@ from common import logger
 
 from common.compute import compute_time_txt
 from common.discord import make_embed
+from config_client.data import bot_config
 
-BOARD_REFRESH_TIME = int(os.environ.get("PLAYTIME_REFRESH_TIME", 60))
+BOARD_REFRESH_TIME = bot_config.playtime_refresh_time or 60
 
 
 # TODO: create base class for these boards, too much duplication
@@ -110,8 +110,8 @@ if __name__ == "__main__":
     )
 
     def load_db() -> tuple[AsyncIOMotorCollection, AsyncIOMotorCollection] | None:
-        db_connection = os.environ.get("DB_CONNECTION_STRING", None)
-        db_name = os.environ.get("DB_NAME", None)
+        db_connection = bot_config.db_connection_string
+        db_name = bot_config.db_name
         if db_name is None or db_connection is None:
             print(
                 "DB config incomplete, either missing DB_CONNECTION_STRING or DB_NAME from environment variables"
@@ -126,9 +126,9 @@ if __name__ == "__main__":
     intents = discord.Intents.default()
     intents.message_content = True
     (_, playtime_collection) = load_db()
-    playtime_channel = int(os.environ.get("PLAYTIME_CHANNEL", 0))
+    playtime_channel = bot_config.playtime_channel
 
     playtime_scoreboard = PlayTimeScoreboard(
         playtime_channel, playtime_collection, intents=intents
     )
-    playtime_scoreboard.run(token=os.environ.get("D_TOKEN"))
+    playtime_scoreboard.run(token=bot_config.d_token)

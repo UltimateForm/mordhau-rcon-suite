@@ -1,4 +1,3 @@
-from os import environ
 from datetime import datetime, timedelta
 import asyncio
 import dotenv
@@ -7,6 +6,7 @@ from reactivex import Subject
 import pymongo
 from persistent_titles.data import SessionEvent
 from common import logger, parsers
+from config_client.data import bot_config
 
 
 class SessionTopic(Subject[SessionEvent]):
@@ -39,7 +39,9 @@ class SessionTopic(Subject[SessionEvent]):
         session_duration = date - login_date
         session_minutes = session_duration.total_seconds() / 60
         session_minutes_rounded = round(session_minutes)
-        self.on_next(SessionEvent(original_username, playfab_id, session_minutes_rounded))
+        self.on_next(
+            SessionEvent(original_username, playfab_id, session_minutes_rounded)
+        )
         return session_minutes_rounded
 
 
@@ -61,8 +63,8 @@ async def main():
     logger.use_date_time_logger()
     dotenv.load_dotenv()
 
-    db_connection = environ.get("DB_CONNECTION_STRING", None)
-    db_name = environ.get("DB_NAME", None)
+    db_connection = bot_config.db_connection_string
+    db_name = bot_config.db_name
     db_client = AsyncIOMotorClient(db_connection)
     database = db_client[db_name]
     collection = database["live_sessions"]

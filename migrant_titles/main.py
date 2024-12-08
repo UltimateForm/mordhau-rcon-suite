@@ -1,9 +1,8 @@
-from os import environ
 import asyncio
 from dataclasses import dataclass
 from reactivex import Observable, Subject
 from common.models import KillfeedEvent, PlayerStore
-from config_client.main import config
+from config_client.data import pt_config, bot_config
 from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
 from common import parsers, logger
@@ -26,7 +25,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
     _player_store: PlayerStore
 
     def __init__(self, player_store: PlayerStore):
-        self.rex_tile = environ.get("TITLE", DEFAULT_REX_TITLE)
+        self.rex_tile = bot_config.title or DEFAULT_REX_TITLE
         self._player_store = player_store
         super().__init__()
 
@@ -36,7 +35,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
     def _sanitize_name(self, playfab_id: str, current_name: str):
         login_username = self._player_store.players.get(playfab_id, None)
-        rename = config.rename.get(playfab_id, None)
+        rename = pt_config.rename.get(playfab_id, None)
         target_name = rename or login_username or current_name
         return target_name.replace(f"[{self.rex_tile}]", "").lstrip()
 

@@ -3,7 +3,7 @@ from reactivex import Observer
 
 from common.compute import compute_gate_text, compute_next_gate_text, compute_time_txt
 from common.parsers import parse_chat_event
-from config_client.data import Config
+from config_client.models import PtConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 from rank_compute.kills import get_kills
@@ -12,11 +12,11 @@ from rcon.rcon import RconContext
 
 
 class IngameCommands(Observer[str]):
-    _config: Config
+    _config: PtConfig
     _playtime_collection: AsyncIOMotorCollection | None = None
     _kills_collection: AsyncIOMotorCollection | None = None
 
-    def __init__(self, config: Config, db: AsyncIOMotorDatabase) -> None:
+    def __init__(self, config: PtConfig, db: AsyncIOMotorDatabase) -> None:
         self._playtime_collection = db["playtime"]
         self._kills_collection = db["kills"]
         self._config = config

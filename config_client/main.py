@@ -1,15 +1,14 @@
 import asyncio
-import os
 import json
 import discord
 from discord.ext import commands
 from common import parsers
 from common.discord import make_embed as common_make_embed
-from config_client.data import Config, load_config, save_config
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 
+from config_client.data import pt_config, bot_config
 from rank_compute.kills import get_kills
 from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
@@ -17,9 +16,7 @@ from rcon.rcon import RconContext
 intents = discord.Intents.default()
 intents.message_content = True
 
-config_bot = commands.Bot(command_prefix=".", intents=intents)
-
-config: Config = load_config()
+config_bot = commands.Bot(command_prefix=".", intents=intents, help_command=None)
 
 
 def make_embed(ctx: commands.Context):
@@ -35,7 +32,7 @@ async def ping(ctx: commands.Context):
 # TODO: jesus organize commands better after things calm down
 # TODO: create custom decorator so we dont have to repeat error handling in all the below commands
 
-bot_channel = int(os.environ.get("CONFIG_BOT_CHANNEL", "0"))
+bot_channel = bot_config.config_bot_channel
 
 
 @config_bot.command("setTagFormat")
@@ -49,8 +46,8 @@ async def set_tag_format(ctx: commands.Context, arg_format: str):
             raise ValueError(
                 f"`{arg_format}` is not a valid format. Must include tag placeholder (`{{0}}`) in the format string."
             )
-        config.tag_format = arg_format
-        save_config(config)
+        pt_config.tag_format = arg_format
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -66,8 +63,8 @@ async def set_salute_timer(ctx: commands.Context, arg_timer: int):
     embed = make_embed(ctx)
     embed.add_field(name="ArgFormat", value=f"{arg_timer} seconds")
     try:
-        config.salute_timer = arg_timer
-        save_config(config)
+        pt_config.salute_timer = arg_timer
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -84,8 +81,8 @@ async def add_tag(ctx: commands.Context, arg_playfab_id: str, arg_tag: str):
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     embed.add_field(name="Tag", value=arg_tag)
     try:
-        config.tags[arg_playfab_id] = arg_tag
-        save_config(config)
+        pt_config.tags[arg_playfab_id] = arg_tag
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -102,8 +99,8 @@ async def add_rename(ctx: commands.Context, arg_playfab_id: str, arg_rename: str
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     embed.add_field(name="Rename", value=arg_rename)
     try:
-        config.rename[arg_playfab_id] = arg_rename
-        save_config(config)
+        pt_config.rename[arg_playfab_id] = arg_rename
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -120,8 +117,8 @@ async def add_playtime_tag(ctx: commands.Context, arg_minutes: int, arg_tag: str
     embed.add_field(name="Min minutes played", value=arg_minutes)
     embed.add_field(name="Tag", value=arg_tag)
     try:
-        config.playtime_tags[str(arg_minutes)] = arg_tag
-        save_config(config)
+        pt_config.playtime_tags[str(arg_minutes)] = arg_tag
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -137,14 +134,14 @@ async def remove_tag(ctx: commands.Context, arg_playfab_id: str):
     embed = make_embed(ctx)
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     try:
-        current_tag = config.tags.get(arg_playfab_id, None)
+        current_tag = pt_config.tags.get(arg_playfab_id, None)
         if not current_tag:
             raise ValueError(
                 f"PlayfabId {arg_playfab_id} doesn't have any registered tag"
             )
         embed.add_field(name="RemovedTag", value=current_tag)
-        config.tags.pop(arg_playfab_id, None)
-        save_config(config)
+        pt_config.tags.pop(arg_playfab_id, None)
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -160,14 +157,14 @@ async def remove_rename(ctx: commands.Context, arg_playfab_id: str):
     embed = make_embed(ctx)
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     try:
-        current_rename = config.rename.get(arg_playfab_id, None)
+        current_rename = pt_config.rename.get(arg_playfab_id, None)
         if not current_rename:
             raise ValueError(
                 f"PlayfabId {arg_playfab_id} doesn't have any registered rename"
             )
         embed.add_field(name="RemovedRename", value=current_rename)
-        config.rename.pop(arg_playfab_id, None)
-        save_config(config)
+        pt_config.rename.pop(arg_playfab_id, None)
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -183,14 +180,14 @@ async def remove_playtime_tag(ctx: commands.Context, arg_minutes: str):
     embed = make_embed(ctx)
     embed.add_field(name="Min minutes played", value=arg_minutes)
     try:
-        current_tag = config.playtime_tags.get(arg_minutes, None)
+        current_tag = pt_config.playtime_tags.get(arg_minutes, None)
         if not current_tag:
             raise ValueError(
                 f"Min minutes played {arg_minutes} doesn't have any registered tag"
             )
         embed.add_field(name="RemovedTag", value=current_tag)
-        config.playtime_tags.pop(arg_minutes, None)
-        save_config(config)
+        pt_config.playtime_tags.pop(arg_minutes, None)
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -207,8 +204,8 @@ async def add_salute(ctx: commands.Context, arg_playfab_id: str, arg_salute: str
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     embed.add_field(name="Salute", value=arg_salute, inline=False)
     try:
-        config.salutes[arg_playfab_id] = arg_salute
-        save_config(config)
+        pt_config.salutes[arg_playfab_id] = arg_salute
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -224,14 +221,14 @@ async def remove_salute(ctx: commands.Context, arg_playfab_id: str):
     embed = make_embed(ctx)
     embed.add_field(name="PlayfabId", value=arg_playfab_id)
     try:
-        current_salute = config.salutes.get(arg_playfab_id, None)
+        current_salute = pt_config.salutes.get(arg_playfab_id, None)
         if not current_salute:
             raise ValueError(
                 f"PlayfabId {arg_playfab_id} doesn't have any registered salute"
             )
         embed.add_field(name="RemovedSalute", value=current_salute, inline=False)
-        config.salutes.pop(arg_playfab_id, None)
-        save_config(config)
+        pt_config.salutes.pop(arg_playfab_id, None)
+        pt_config.save()
         embed.add_field(name="Success", value=True, inline=False)
     except Exception as e:
         embed.add_field(name="Success", value=False, inline=False)
@@ -248,7 +245,7 @@ async def get_config(ctx: commands.Context):
     too_long: bool = False
     json_code: str = ""
     try:
-        config_json = json.dumps(config.__dict__, indent=2)
+        config_json = json.dumps(pt_config.__dict__, indent=2)
         json_code = f"```{config_json}```"
         config_len = len(json_code)
         too_long = config_len >= 1024 and config_len < 2000

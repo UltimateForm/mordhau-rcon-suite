@@ -1,4 +1,3 @@
-import os
 import asyncio
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 from reactivex import operators
@@ -9,7 +8,8 @@ from persistent_titles.playtime_client import PlaytimeClient
 from common.parsers import parse_date, parse_login_event
 from rcon.rcon_listener import RconListener
 from common import logger
-from config_client.main import config, config_bot
+from config_client.main import config_bot
+from config_client.data import pt_config, bot_config
 
 
 class PersistentTitles:
@@ -18,7 +18,7 @@ class PersistentTitles:
 
     def __init__(self, login_observable: Observable[str]):
         self._login_observable = login_observable
-        self.login_observer = LoginObserver(config)
+        self.login_observer = LoginObserver(pt_config)
         self._login_observable.pipe(
             operators.filter(lambda x: x.startswith("Login:"))
         ).subscribe(self.login_observer)
@@ -70,7 +70,7 @@ class PersistentTitles:
         if playtime_enabled:
             self.enable_playtime(playtime_client, live_sessions_collection)
         # TODO: config bot start should be started somewhere else since now it's including non-pt stuff
-        await config_bot.start(token=os.environ.get("D_TOKEN"))
+        await config_bot.start(token=bot_config.d_token)
 
 
 async def main():
