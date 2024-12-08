@@ -1,6 +1,6 @@
 import asyncio
-import os
 import config_client.main as config_client
+from config_client.data import pt_config, bot_config
 from dotenv import load_dotenv
 from boards.info import InfoBoard
 from boards.kills import KillsScoreboard
@@ -14,6 +14,7 @@ from migrant_titles.main import MigrantTitles, MigrantComputeEvent
 from rcon.rcon_listener import RconListener
 from db_kills.main import DbKills
 from boards.playtime import PlayTimeScoreboard
+from killstreaks.main import KillStreaks
 
 load_dotenv()
 
@@ -27,15 +28,15 @@ async def main():
     chat_listener = RconListener("chat")
     migrant_titles = MigrantTitles(killfeed_listener, player_store)
     peristent_titles = PersistentTitles(login_listener)
-    ingame_commands = IngameCommands(config_client.config, db)
+    ingame_commands = IngameCommands(pt_config, db)
     db_kills = DbKills(db["kills"], killfeed_listener, player_store)
-    playtime_channel = int(os.environ.get("PLAYTIME_CHANNEL", 0))
-    kills_channel = int(os.environ.get("KILLS_CHANNEL", 0))
+    playtime_channel = bot_config.playtime_channel
+    kills_channel = bot_config.kills_channel
     playtime_scoreboard = PlayTimeScoreboard(
         playtime_channel, db["playtime"], common_intents
     )
     kills_scoreboard = KillsScoreboard(kills_channel, db["kills"], common_intents)
-    d_token = os.environ.get("D_TOKEN")
+    d_token = bot_config.d_token
 
     def populate_player_store(raw: str):
         try:
@@ -51,8 +52,13 @@ async def main():
                 f"Failed to populate player store with event '{raw}'; Error: {e}"
             )
 
+    chat_listener.subscribe()
     login_listener.subscribe(populate_player_store)
     chat_listener.subscribe(ingame_commands)
+
+    if bot_config.ks_enabled:
+        killstreaks = KillStreaks()
+        killfeed_listener.subscribe(killstreaks)
 
     def handle_tag_for_removed_rex(event: MigrantComputeEvent):
         logger.debug(f"handle_tag_for_removed_rex {event}")
@@ -74,10 +80,10 @@ async def main():
         kills_scoreboard.start(token=d_token),
         db_kills.start(),
     ]
-    info_channel = int(os.environ.get("INFO_CHANNEL", 0))
-    if info_channel:
+    if bot_config.info_board_enabled():
+        info_channel = bot_config.info_channel
         info_board = InfoBoard(info_channel, common_intents)
-        tasks.append(info_board.start(token=os.environ.get("D_TOKEN")))
+        tasks.append(info_board.start(d_token))
     await asyncio.gather(*tasks)
 
 
