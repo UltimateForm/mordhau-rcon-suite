@@ -39,7 +39,6 @@ async def main():
     kills_scoreboard = KillsScoreboard(kills_channel, db["kills"], common_intents)
     d_token = bot_config.d_token
 
-    chat_listener.subscribe()
     chat_listener.subscribe(ingame_commands)
 
     tasks = [
