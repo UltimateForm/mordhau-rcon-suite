@@ -11,10 +11,7 @@ def make_embed(
     color: discord.Colour | None = None,
     footer_txt: str | None = None,
 ):
-    footer_txt_env = os.environ.get(
-        "EMBED_FOOTER_TXT",
-        "",
-    )
+    footer_txt_env = bot_config.embed_footer_txt or ""
     footer_icon = bot_config.embed_footer_icon
     embed = discord.Embed(title=title, description=description, color=color)
     embed.set_footer(
