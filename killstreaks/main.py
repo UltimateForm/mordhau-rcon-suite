@@ -22,6 +22,7 @@ def get_template(streak: int, source: dict[str, str | list[str]]) -> str | None:
 
 class KillStreaks(Observer[str]):
     tally = dict[str, int]
+    _first_blood_claimed = False
     _config: KsConfig
 
     def __init__(self) -> None:
@@ -66,10 +67,13 @@ class KillStreaks(Observer[str]):
 
     def reset(self):
         self.tally = {}
+        self._first_blood_claimed = False
 
     async def self_end_ks(self, user_name: str, playfab_id: str):
         current_streak = self.tally.pop(playfab_id, 0)
-        streak_gates = [int(key) for key in self._config.streak.keys() if key.isnumeric()]
+        streak_gates = [
+            int(key) for key in self._config.streak.keys() if key.isnumeric()
+        ]
         if current_streak < min(streak_gates):
             return
         async with asyncio.timeout(10):
@@ -78,10 +82,23 @@ class KillStreaks(Observer[str]):
                     f"say {user_name} ended their own killstreak of {current_streak}"
                 )
 
+    async def first_blood(self, user_name: str, victim_name: str):
+        if self._first_blood_claimed:
+            return
+        self._first_blood_claimed = True
+        template = self._config.firstblood
+        msg = template.format(user_name, 1, victim_name)
+        async with asyncio.timeout(10):
+            async with RconContext() as client:
+                await client.execute(f"say {msg}")
+
     def on_next(self, raw: str):
         kill_event = parse_killfeed_event(raw)
         if kill_event is None:
             return
+        asyncio.create_task(
+            self.first_blood(kill_event.user_name, kill_event.killed_user_name)
+        )
         asyncio.create_task(
             self.handle_killer_streak(kill_event.user_name, kill_event.killer_id)
         )
