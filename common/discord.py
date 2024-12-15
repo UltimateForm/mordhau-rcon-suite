@@ -1,5 +1,5 @@
 import discord
-import os
+from config_client.data import bot_config
 
 common_intents = discord.Intents.default()
 common_intents.message_content = True
@@ -15,7 +15,7 @@ def make_embed(
         "EMBED_FOOTER_TXT",
         "",
     )
-    footer_icon = os.environ.get("EMBED_FOOTER_ICON", None)
+    footer_icon = bot_config.embed_footer_icon
     embed = discord.Embed(title=title, description=description, color=color)
     embed.set_footer(
         text="\n".join([footer_txt, footer_txt_env]) if footer_txt else footer_txt_env,

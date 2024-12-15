@@ -1,5 +1,4 @@
 import asyncio
-import os
 import aiofiles
 import aiofiles.os
 import discord
@@ -9,8 +8,9 @@ from common import logger, parsers
 from common.compute import compute_time_txt
 from rcon.rcon import RconContext
 from itertools import takewhile
+from config_client.data import bot_config
 
-BOARD_REFRESH_TIME = int(os.environ.get("INFO_REFRESH_TIME", 30))
+BOARD_REFRESH_TIME = bot_config.info_refresh_time or 30
 
 
 # TODO: create base class for these boards, too much duplication

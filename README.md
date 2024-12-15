@@ -2,24 +2,37 @@
 
 This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which adds the following new features:
 - recording kills
+  - and broadcasting killstreaks
 - sending scoreboards to discord
   - kills
   - playtime
   - checking indivdual player playtime, killscore, and lifetime match score against another player
 - player list/server info
 
+
+If you need custom changes please reach out to me on discord or create an issue.
+
 ## Contents
 
 - [mordhau-rcon-suite](#mordhau-rcon-suite)
   - [Contents](#contents)
   - [Setup](#setup)
-    - [Source](#source)
-    - [REQUIRED MONGODB TABLES (COLLECTIONS)](#required-mongodb-tables-collections)
-    - [Example .env](#example-env)
+    - [1. clone repo or download code](#1-clone-repo-or-download-code)
+    - [2. configure](#2-configure)
+      - [a) via .env](#a-via-env)
+        - [example](#example)
+      - [b) via `./persist/bot.config.json`](#b-via-persistbotconfigjson)
+        - [example](#example-1)
+    - [3. setup MONGODB TABLES (COLLECTIONS)](#3-setup-mongodb-tables-collections)
+    - [4. run bot](#4-run-bot)
+  - [Killstreaks](#killstreaks)
+    - [Configuration](#configuration)
+      - [example](#example-2)
+    - [FAQs](#faqs)
   - [mordhauMigrantTitles](#mordhaumigranttitles)
     - [What it do?](#what-it-do)
     - [Important note](#important-note)
-    - [FAQs](#faqs)
+    - [FAQs](#faqs-1)
   - [mordhauPersistentTitles](#mordhaupersistenttitles)
     - [What it do?](#what-it-do-1)
     - [Playtime Titles](#playtime-titles)
@@ -38,44 +51,45 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
 ## Setup
 You need at least Docker installed and a terminal that can run .sh files (linux or unix-like system)
 
-### Source
 
-1. clone repo or download code
-1. create .env file in same folder as code with these parameters:
+### 1. clone repo or download code
+
+Clone this repo or download the code into your working folder. This should be fairly simple, if unsure just google it.
+
+### 2. configure
+
+There are two ways to configure this bot, the .env file described in the previous section and a bot.config.json created in path `./persist/bot.config.json`.
+
+Here's how the config is loaded:
+1. check if `./persist/bot.config.json` exists
+   1. if yes, load config from that file
+   2. if no, load config from environment variables (i.e. .env)
+      1. if no settings found in environment variables, create a `./persist/bot.config.json` with default values (**THIS WILL NOT WORK FOR BOT EXECUTION**)
+
+#### a) via .env
+
+- create .env file in same folder as code with these parameters
     1. RCON_PASSWORD
-    1. RCON_ADDRESS
-    1. RCON_PORT
-    3. RCON_CONNECT_TIMEOUT (optional)
-    4. DB_NAME
-    5. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
-    6. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
-    7. KILLS_CHANNEL (channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
-    8. KILLS_REFRESH_TIME (time interval in seconds for kills/death/ratio scoreboard update)
-    9. INFO_CHANNEL (optional, channel to post server info)
-    10. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
-    11. D_TOKEN (discord bot auth token)
-    12. TITLE (optional)
-    13. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to commands from [Config commands](#config-commands))
-    14. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
-    15. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
-    16. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
+    2. RCON_ADDRESS
+    3. RCON_PORT
+    4. RCON_CONNECT_TIMEOUT (optional)
+    5. DB_NAME
+    6. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
+    7. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
+    8. KILLS_CHANNEL (channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
+    9. KILLS_REFRESH_TIME (time interval in seconds for kills/death/ratio scoreboard update)
+    10. INFO_CHANNEL (optional, channel to post server info)
+    11. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
+    12. D_TOKEN (discord bot auth token)
+    13. TITLE (optional)
+    14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to commands from [Config commands](#config-commands))
+    15. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
+    16. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
+    17. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
+    18. KS_ENABLED (optional, 1 for enabled, 0 for disabled, default disabled)
 
-### REQUIRED MONGODB TABLES (COLLECTIONS)
-(If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
+##### example
 
-You will need to at least have 2 tables created for playtime titles:
-1. `live_session`: this is where sessions are ephemeraly stored
-   1. while ingame users will have records in this table with their login time
-   2. when users logout of game session time is calculated and record is deleted
-2. `playtime`
-   1. this is where playtimes are stored, in minutes
-3. `kills`
-   1. this is where kill records are stored
-
-2. run `sh restart.sh` in terminal
-    1. if you're familar with docker or python you don't necessarily need to this, you can run this bot anywhere and however you want
-
-### Example .env
 ```
 RCON_PASSWORD=superD_uprSecurePw
 RCON_ADDRESS=192.168.0.52
@@ -92,6 +106,140 @@ KILLS_REFRESH_TIME=1800
 ```
 
 
+  
+#### b) via `./persist/bot.config.json`
+
+Create a file with name `bot.config.json` at folder `./persist/` and paste there the template provided below. Replace the square brackets and their content within with actual config values:
+
+- for type number: write just the raw numeric value
+- for type string: write the text value between quotes (i.e. `"example"`)
+- for type bool: write either `false` or `true`
+
+Template:
+
+```
+{
+  "info_channel": <type number, optional, channel to post server info>,
+  "embed_footer_txt": <type string, optional, channel to post server info>,
+  "embed_footer_icon": <type string, optional, link to image to be added at footer of embed>,
+  "kills_channel": <type number, channel to post kills/death/ratio scoreboard, read more at #boards>,
+  "playtime_channel": <type number, channel to post playtime scoreboard, read more at #boards>,
+  "playtime_refresh_time": <type number, time interval in seconds for playtime scoreboard update>,
+  "kills_refresh_time": <type number, time interval in seconds for kills/death/ratio scoreboard update>,
+  "info_refresh_time": <type, optional, time in seconds to refresh server info card>,
+  "ks_enabled": <type bool, optional, true for enabled, false for disabled, default disabled>,
+  "config_bot_channel": <type number, id of channel to limit config commands to one channel, only applies to commands from #config-commands>,
+  "rcon_password": <type string>,
+  "rcon_address": <type string>,
+  "rcon_port": <type number>,
+  "rcon_connect_timeout": <type number, optional, units in seconds>,
+  "d_token": <type string, discord bot auth token>,
+  "title": <type string, optional, title for migrant titles>,
+  "db_connection_string": <type string, for #playtime-titles and kill records>,
+  "db_name": <type string, name of the DB you created on dynamodb>
+}
+```
+
+##### example
+
+```json
+{
+  "info_channel": 63860684619200738927,
+  "embed_footer_txt": "Bot source code: https://github.com/UltimateForm/mordhau-rcon-suite",
+  "embed_footer_icon": "https://img.icons8.com/ios-glyphs/1x/github.png",
+  "kills_channel": 8975849891383335326,
+  "playtime_channel": 1245309379415084945,
+  "playtime_refresh_time": 1800,
+  "kills_refresh_time": 1800,
+  "info_refresh_time": 10,
+  "ks_enabled": true,
+  "config_bot_channel": 5647207162853061246,
+  "rcon_password": "bababoey",
+  "rcon_address": "169.159.1.255",
+  "rcon_port": 7779,
+  "rcon_connect_timeout": 10,
+  "d_token": "dffdfsdfsdfsdfsdfwelkhLKJHAKSJDHASKJDASTDL.jokshydiausdhasdaiowe2DF",
+  "title": "KING",
+  "db_connection_string": "mongodb+srv://yourMongoDbUser:yourSafeMongoDbPsw@url.to.mongodb.net",
+  "db_name": "mordhau"
+}
+```
+
+
+### 3. setup MONGODB TABLES (COLLECTIONS)
+(If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
+
+You will need to at least have 2 tables created for playtime titles:
+1. `live_session`: this is where sessions are ephemeraly stored
+   1. while ingame users will have records in this table with their login time
+   2. when users logout of game session time is calculated and record is deleted
+2. `playtime`
+   1. this is where playtimes are stored, in minutes
+3. `kills`
+   1. this is where kill records are stored
+
+### 4. run bot
+
+Run `sh restart.sh` in terminal. Don't worry about that name, it's called "restart" because it will try to stop the bot first if it's running already.
+
+If you're familar with docker or python you don't necessarily need to this, you can run this bot anywhere and however you want
+
+## Killstreaks
+
+If you have killstreaks enabled (see [configuration section](#2-configure)) the bot will broadcast killstreaks to your server. I.e. when a player kills 10 others in a row a server message will say "X has downed 10 foes in a row!". This message is configurable.
+
+### Configuration
+
+For killstreaks to work you need to create a file named `ks.config.json` at folder `./persist/`. Use this template:
+```
+{
+  "streak": {
+    "5": [
+      <type string, this is a list of template messages for killstreaks>,
+      <type string, if you declare an entry this way the bot will select a random killstreak message template in the list>
+    ],
+    "10": <type string, if you declare it this way, the killstreak template message for 10 kills will always be the same>,
+    "15": <type string, note that the template entries must be multiples of 5>,
+    "16": THIS WILL NOT WORK, NOT A MULTIPLE OF 5, DELETE THIS LINE
+    "20": <type string, template strings support 3 placeholders, {0} for the killer's name, {1} for current kill count, {2} for the killed player's name, see the example below>,
+    "25": "{2} is the 25th foe to fall to {0}'s rampage! THEY'RE UNSTOPABLE"
+    "*": <type string, this is the global template to be used for any non defined streak, i.e 30, 35, etc>
+  },
+  "end": {
+    "*": <type string, same rules as the streak templates apply here, difference is that these are the templates for when someone's streak is ended>
+  },
+  "firstblood": <type string, template for the firstblood in a round, same rules apply>
+}
+```
+
+#### example
+```json
+{
+  "streak": {
+    "5": [
+      "{0} is on a 5+ kill streak!",
+      "HEADS ROLLING! {0} HAS DOWNED 5 FOES IN A ROW"
+    ],
+    "10": [
+      "{0} is on a 10+ kill streak!",
+      "{0} IS UNSTOPPABLE! 10 KILLS IN A ROW"
+    ],
+    "15": "15 CONSECUTIVE KILLS BY {0}!",
+    "20": "20?! 20 (!!!) CONSECUTIVE KILLS BY {0}",
+    "*": "INSANE {1} CONSECUTIVE KILLSTREAK BY {0}!"
+  },
+  "end": {
+    "10": "bummer, {2}'s killstreak of {1} ended by {0}",
+    "*": "{0} ended {2}'s killstreak of {1}",
+  },
+  "firstblood": "{0} has claimed first blood!"
+}
+```
+
+### FAQs
+
+- how do i skip a level in the killstreaks? I don't people with just 5 streaks to broadcast killstreak
+  - declare the entry with empty value, i.e. `"5": ""` this way no message will be broadcast. If you just don't declare anything for that level then the global (`"*": ...`) template will be used.
 ## mordhauMigrantTitles
 
 ### What it do?

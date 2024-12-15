@@ -3,18 +3,18 @@ from reactivex import Observer
 from common.models import LoginEvent
 from persistent_titles.playtime_client import PlaytimeClient
 from common.compute import compute_gate_text
-from config_client.data import Config
+from config_client.models import PtConfig
 from rcon.rcon import RconContext
 from rcon.rcon_listener import RconListener
 from common.parsers import parse_login_event
 
 
 class LoginObserver(Observer[str]):
-    _config: Config
+    _config: PtConfig
     playtime_client: PlaytimeClient | None
 
     def __init__(
-        self, config: Config, playtime_client: PlaytimeClient | None = None
+        self, config: PtConfig, playtime_client: PlaytimeClient | None = None
     ) -> None:
         self._config = config
         self.playtime_client = playtime_client
@@ -84,7 +84,7 @@ class LoginObserver(Observer[str]):
 if __name__ == "__main__":
     login_listener = RconListener("login")
     manager = LoginObserver(
-        Config({"PLAYFABID": "MORBIUS"}, {"PLAYFABID": "IT'S MORBIN TIME"})
+        PtConfig({"PLAYFABID": "MORBIUS"}, {"PLAYFABID": "IT'S MORBIN TIME"})
     )
     login_listener.subscribe(manager)
 

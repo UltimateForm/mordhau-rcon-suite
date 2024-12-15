@@ -18,6 +18,7 @@ GROK_SERVER_INFO = r"HostName: %{GREEDYDATA:host}\nServerName: %{GREEDYDATA:serv
 GROK_PLAYERLIST_ROW = (
     r"%{NOTSPACE:player_id}, %{GREEDYDATA:user_name}, %{GREEDYDATA}, %{GREEDYDATA}"
 )
+GROK_MATCHSTATE = r"MatchState: %{GREEDYDATA:state}"
 
 
 def parse_event(event: str, grok_pattern: str) -> tuple[bool, dict[str, str]]:
@@ -72,6 +73,13 @@ def parse_playerlist(raw: str) -> list[Player]:
     rows = raw.splitlines()
     rows_parsed = [parse_playerlist_row(row) for row in rows]
     return [row for row in rows_parsed if row]
+
+
+def parse_matchstate(raw: str) -> str | None:
+    (success, parsed) = parse_event(raw, GROK_MATCHSTATE)
+    if not success:
+        return None
+    return parsed.get("state", None)
 
 
 def transform_kill_record_to_db(record: KillRecord) -> tuple[list[dict], dict]:
