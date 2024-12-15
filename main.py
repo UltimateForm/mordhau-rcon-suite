@@ -30,6 +30,7 @@ async def main():
     peristent_titles = PersistentTitles(login_listener)
     ingame_commands = IngameCommands(pt_config, db)
     db_kills = DbKills(db["kills"], killfeed_listener, player_store)
+    killstreaks = KillStreaks() if bot_config.ks_enabled else None
     playtime_channel = bot_config.playtime_channel
     kills_channel = bot_config.kills_channel
     playtime_scoreboard = PlayTimeScoreboard(
@@ -38,13 +39,45 @@ async def main():
     kills_scoreboard = KillsScoreboard(kills_channel, db["kills"], common_intents)
     d_token = bot_config.d_token
 
-    def populate_player_store(raw: str):
+    chat_listener.subscribe()
+    chat_listener.subscribe(ingame_commands)
+
+    tasks = [
+        login_listener.start(),
+        killfeed_listener.start(),
+        chat_listener.start(),
+        peristent_titles.start(db),
+        playtime_scoreboard.start(token=d_token),
+        kills_scoreboard.start(token=d_token),
+        db_kills.start(),
+    ]
+
+    if killstreaks:
+        matchstate_listener = RconListener("matchstate")
+
+        def matchstate_next(raw: str):
+            state = parsers.parse_matchstate(raw)
+            if not state:
+                return
+            stripped_state = state.strip("\x00")
+            if stripped_state.lower() == "in progress":
+                killstreaks.reset()
+
+        matchstate_listener.subscribe(matchstate_next)
+        killfeed_listener.subscribe(killstreaks)
+        tasks.append(matchstate_listener.start())
+
+    def entrance_desk(raw: str):
         try:
             player = parsers.parse_login_event(raw)
             if player is None:
                 return
             if player.instance == "out":
                 player_store.players.pop(player.player_id, None)
+                if killstreaks:
+                    asyncio.create_task(
+                        killstreaks.self_end_ks(player.user_name, player.player_id)
+                    )
             else:
                 player_store.players[player.player_id] = player.user_name
         except Exception as e:
@@ -52,13 +85,7 @@ async def main():
                 f"Failed to populate player store with event '{raw}'; Error: {e}"
             )
 
-    chat_listener.subscribe()
-    login_listener.subscribe(populate_player_store)
-    chat_listener.subscribe(ingame_commands)
-
-    if bot_config.ks_enabled:
-        killstreaks = KillStreaks()
-        killfeed_listener.subscribe(killstreaks)
+    login_listener.subscribe(entrance_desk)
 
     def handle_tag_for_removed_rex(event: MigrantComputeEvent):
         logger.debug(f"handle_tag_for_removed_rex {event}")
@@ -71,15 +98,7 @@ async def main():
         )
 
     migrant_titles.rex_compute.subscribe(handle_tag_for_removed_rex)
-    tasks = [
-        login_listener.start(),
-        killfeed_listener.start(),
-        chat_listener.start(),
-        peristent_titles.start(db),
-        playtime_scoreboard.start(token=d_token),
-        kills_scoreboard.start(token=d_token),
-        db_kills.start(),
-    ]
+
     if bot_config.info_board_enabled():
         info_channel = bot_config.info_channel
         info_board = InfoBoard(info_channel, common_intents)

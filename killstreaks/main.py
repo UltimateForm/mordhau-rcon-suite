@@ -64,6 +64,20 @@ class KillStreaks(Observer[str]):
             async with RconContext() as client:
                 await client.execute(f"say {msg}")
 
+    def reset(self):
+        self.tally = {}
+
+    async def self_end_ks(self, user_name: str, playfab_id: str):
+        current_streak = self.tally.pop(playfab_id, 0)
+        streak_gates = [int(key) for key in self._config.streak.keys() if key.isnumeric()]
+        if current_streak < min(streak_gates):
+            return
+        async with asyncio.timeout(10):
+            async with RconContext() as client:
+                await client.execute(
+                    f"say {user_name} ended their own killstreak of {current_streak}"
+                )
+
     def on_next(self, raw: str):
         kill_event = parse_killfeed_event(raw)
         if kill_event is None:
