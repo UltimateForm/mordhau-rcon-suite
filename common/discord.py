@@ -13,7 +13,7 @@ def make_embed(
 ):
     footer_txt_env = os.environ.get(
         "EMBED_FOOTER_TXT",
-        "Bot source: https://github.com/UltimateForm/mordhau-rcon-suite",
+        "",
     )
     footer_icon = os.environ.get("EMBED_FOOTER_ICON", None)
     embed = discord.Embed(title=title, description=description, color=color)

@@ -11,7 +11,6 @@ from table2ascii import table2ascii as t2a
 from common import logger
 
 from common.compute import compute_time_txt
-from common.discord import make_embed
 
 BOARD_REFRESH_TIME = int(os.environ.get("PLAYTIME_REFRESH_TIME", 60))
 
@@ -86,11 +85,16 @@ class PlayTimeScoreboard(discord.Client):
         )
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-        embed = make_embed(
-            ":clock4: PLAYTIME RECORDS (top 20) :clock4:",
+        embed = discord.Embed(
+            title="<:ClockofDestiny:1310130670798110810> PLAYTIME LEADERBOARD (TOP 20) <:ClockofDestiny:1310130670798110810>",
             description=time_sig + "\n" + ascii_table,
-            color=discord.Colour(5763719),
-            footer_txt=f"Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}\nUnknown players will be shown by playfab id only, login and logout to capture username",
+            color=discord.Colour(int("1eff00", 16)),
+        )
+        embed.set_footer(
+            text=f"""
+Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
+Data has been collecting since 5/25/2024
+                """
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
