@@ -9,6 +9,9 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
   - checking indivdual player playtime, killscore, and lifetime match score against another player
 - player list/server info
 
+
+If you need custom changes please reach out to me on discord or create an issue.
+
 ## Contents
 
 - [mordhau-rcon-suite](#mordhau-rcon-suite)
