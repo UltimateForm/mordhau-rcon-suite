@@ -281,6 +281,7 @@ def rank_2_emoji(n: int):
 async def kdr(ctx: commands.Context, argument: str):
     collection = DATABASE["kills"]
     embed = make_embed(ctx)
+    embed.color = 0xFFFC2E
     try:
         kill_score = await get_kills(argument, collection)
         if kill_score is None:
@@ -303,6 +304,7 @@ async def kdr(ctx: commands.Context, argument: str):
 async def playtime(ctx: commands.Context, argument: str):
     collection = DATABASE["playtime"]
     embed = make_embed(ctx)
+    embed.color = 0x43FF2E
     try:
         player_score = await get_playtime(argument, collection)
         if player_score is None:
@@ -351,6 +353,7 @@ async def versus(ctx: commands.Context, player1: str, player2: str):
     embed = make_embed(ctx)
     embed.description = "(shows how many times players have killed each other)"
     collection = DATABASE["kills"]
+    embed.color = 0x080808
     try:
         queries: list[dict] = []
         for player in [player1, player2]:
@@ -376,7 +379,7 @@ async def versus(ctx: commands.Context, player1: str, player2: str):
         embed.add_field(
             name=player1_data.get("user_name"), value=player1_kills.get(player2_id, 0)
         )
-        embed.add_field(name=":vs:", value="")
+        embed.add_field(name="<:Versus:1310139196471644190>", value="")
         embed.add_field(
             name=player2_data.get("user_name"), value=player2_kills.get(player1_id, 0)
         )
