@@ -1,8 +1,8 @@
 import asyncio
 import struct
-import os
 from contextlib import AbstractAsyncContextManager
 from common import logger
+from config_client.data import bot_config
 
 # Packet types
 SERVERDATA_AUTH = 3
@@ -57,12 +57,10 @@ class RconClient:
     _connect_timeout: int
 
     def __init__(self) -> None:
-        self._port = int(os.environ["RCON_PORT"])
-        self._connect_timeout = int(
-            os.environ.get("RCON_CONNECT_TIMEOUT", DEFAULT_RCON_CONNECT_TIMEOUT)
-        )
-        self._password = os.environ["RCON_PASSWORD"]
-        self._address = os.environ["RCON_ADDRESS"]
+        self._port = bot_config.rcon_port
+        self._connect_timeout = bot_config.rcon_connect_timeout
+        self._password = bot_config.rcon_password
+        self._address = bot_config.rcon_address
         self._counter = 0
 
     async def recv_pkt(self) -> RconPacket:
@@ -102,9 +100,7 @@ class RconClient:
         self._reader = reader
         self._writer = writer
         pkt_id = self.build_packet_id()
-        writer.write(
-            RconPacket(pkt_id, SERVERDATA_AUTH, self._password).pack()
-        )
+        writer.write(RconPacket(pkt_id, SERVERDATA_AUTH, self._password).pack())
         await writer.drain()
         auth_response = await self.recv_pkt()
         if auth_response.pkt_id != pkt_id:
@@ -118,7 +114,9 @@ class RconClient:
         await self._writer.drain()
         response = await self.recv_pkt()
         if response.pkt_id != pckt_id:
-            raise ValueError(f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}")
+            raise ValueError(
+                f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}"
+            )
         return response.body
 
 
@@ -132,7 +130,8 @@ class RconContext(RconClient, AbstractAsyncContextManager):
 
     async def __aexit__(self, exc_type, exc, tb):
         self._writer.close()
-        await self._writer.wait_closed()
+        async with asyncio.timeout(10):
+            await self._writer.wait_closed()
 
 
 async def main():

@@ -1,5 +1,4 @@
 import asyncio
-import os
 import aiofiles
 import discord
 from discord.ext import tasks
@@ -9,11 +8,11 @@ from motor.motor_asyncio import (
 )
 from table2ascii import table2ascii as t2a
 from common import logger
-
+from config_client.data import bot_config
 from common.compute import compute_time_txt
 from common.discord import make_embed
 
-BOARD_REFRESH_TIME = int(os.environ.get("KILLS_REFRESH_TIME", 60))
+BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
 
 # TODO: create base class for these boards, too much duplication

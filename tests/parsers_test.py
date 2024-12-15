@@ -80,3 +80,10 @@ def test_transforms_kill_records_to_db_mutation():
     (death_updates, mutation) = parsers.transform_kill_record_to_db(kill_record)
     assert mutation == expected_mutation
     assert death_updates == expected_death_updates
+
+
+def test_parse_matchstate():
+    expected_matchstate = "In progress"
+    raw_matchstate = "MatchState: In progress"
+    matchstate = parsers.parse_matchstate(raw_matchstate)
+    assert matchstate == expected_matchstate
