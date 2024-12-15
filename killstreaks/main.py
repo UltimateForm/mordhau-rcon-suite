@@ -94,7 +94,7 @@ class KillStreaks(Observer[str]):
 
     def on_next(self, raw: str):
         kill_event = parse_killfeed_event(raw)
-        if kill_event is None or not kill_event.killed_id:
+        if kill_event is None or not kill_event.killed_id or not kill_event.killer_id:
             return
         asyncio.create_task(
             self.first_blood(kill_event.user_name, kill_event.killed_user_name)
