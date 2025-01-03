@@ -379,7 +379,7 @@ async def versus(ctx: commands.Context, player1: str, player2: str):
         embed.add_field(
             name=player1_data.get("user_name"), value=player1_kills.get(player2_id, 0)
         )
-        embed.add_field(name="<:Versus:1310139196471644190>", value="")
+        embed.add_field(name=":vs:", value="")
         embed.add_field(
             name=player2_data.get("user_name"), value=player2_kills.get(player1_id, 0)
         )
