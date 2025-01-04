@@ -66,7 +66,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-        bot.command("playtime")(playtime)
+    bot.command("playtime")(playtime)
 
     async def playerlist(ctx: Context):
         embed = make_embed(ctx)
