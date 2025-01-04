@@ -1,5 +1,5 @@
 import asyncio
-import config_client.main as config_client
+from dc_player_commands.main import register_dc_player_commands
 from config_client.data import pt_config, bot_config
 from dotenv import load_dotenv
 from boards.info import InfoBoard
@@ -15,19 +15,21 @@ from rcon.rcon_listener import RconListener
 from db_kills.main import DbKills
 from boards.playtime import PlayTimeScoreboard
 from killstreaks.main import KillStreaks
+from discord.ext.commands import Bot
 
 load_dotenv()
 
 
 async def main():
     db = load_db()
-    config_client.DATABASE = db
+    dc_bot = Bot(command_prefix=".", intents=common_intents, help_command=None)
+    register_dc_player_commands(dc_bot, db)
     player_store = PlayerStore()
     login_listener = RconListener(event="login", listening=False)
     killfeed_listener = RconListener(event="killfeed", listening=False)
     chat_listener = RconListener("chat")
     migrant_titles = MigrantTitles(killfeed_listener, player_store)
-    peristent_titles = PersistentTitles(login_listener)
+    peristent_titles = PersistentTitles(login_listener, dc_bot)
     ingame_commands = IngameCommands(pt_config, db)
     db_kills = DbKills(db["kills"], killfeed_listener, player_store)
     killstreaks = KillStreaks() if bot_config.ks_enabled else None
@@ -49,6 +51,7 @@ async def main():
         playtime_scoreboard.start(token=d_token),
         kills_scoreboard.start(token=d_token),
         db_kills.start(),
+        dc_bot.start(token=d_token),
     ]
 
     if killstreaks:

@@ -5,23 +5,26 @@ from reactivex import Observable
 from persistent_titles.login_observer import LoginObserver
 from persistent_titles.session_topic import SessionTopic
 from persistent_titles.playtime_client import PlaytimeClient
+from persistent_titles.dc_config import register_cfg_dc_commands
 from common.parsers import parse_date, parse_login_event
 from rcon.rcon_listener import RconListener
 from common import logger
-from config_client.main import config_bot
-from config_client.data import pt_config, bot_config
+from config_client.data import pt_config
+from discord.ext.commands import Bot
 
 
 class PersistentTitles:
     login_observer: LoginObserver
     _login_observable: Observable[str]
 
-    def __init__(self, login_observable: Observable[str]):
+    def __init__(self, login_observable: Observable[str], bot: Bot | None = None):
         self._login_observable = login_observable
         self.login_observer = LoginObserver(pt_config)
         self._login_observable.pipe(
             operators.filter(lambda x: x.startswith("Login:"))
         ).subscribe(self.login_observer)
+        if bot:
+            register_cfg_dc_commands(bot)
 
     def enable_playtime(
         self,
@@ -69,8 +72,6 @@ class PersistentTitles:
         self.login_observer.playtime_client = playtime_client
         if playtime_enabled:
             self.enable_playtime(playtime_client, live_sessions_collection)
-        # TODO: config bot start should be started somewhere else since now it's including non-pt stuff
-        await config_bot.start(token=bot_config.d_token)
 
 
 async def main():
