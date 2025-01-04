@@ -448,3 +448,5 @@ Example board with random usernames:
 2. This bot hasn't been stress tested, a previous version has been tested on a server with 20-40 players, but was different code
 3. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
 4. this BOT is RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)
+5. CPU usage problems have been reported for this bot, refrain from using this if your CPU is weak
+6. Abitrary values on RconTimeout in Game.ini will result in umpredictable RconIssues, you're advised to change it to a standard value i.e. RconTimeout=120.000000 (this one is known to work)
