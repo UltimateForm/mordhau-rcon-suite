@@ -1,4 +1,5 @@
 import discord
+from reactivex import Subject
 from config_client.data import bot_config
 
 common_intents = discord.Intents.default()
@@ -19,3 +20,13 @@ def make_embed(
         icon_url=footer_icon,
     )
     return embed
+
+
+class ObservableDiscordClient(discord.Client, Subject[discord.Client]):
+    def __init__(self, intents: discord.Intents):
+        discord.Client.__init__(self, intents=intents)
+        Subject.__init__(self)
+
+    async def on_ready(self):
+        self.on_next(self)
+        self.on_completed()

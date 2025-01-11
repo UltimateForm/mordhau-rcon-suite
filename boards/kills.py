@@ -1,63 +1,29 @@
 import asyncio
-import aiofiles
 import discord
-from discord.ext import tasks
 from datetime import datetime, timezone
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
 from table2ascii import table2ascii as t2a
-from common import logger
+from boards.base import Board
 from config_client.data import bot_config
 from common.compute import compute_time_txt
 
 BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
 
-# TODO: create base class for these boards, too much duplication
-class KillsScoreboard(discord.Client):
-    _channel_id: int = 0
-    _channel: discord.TextChannel | None = None
-    _current_message: discord.Message | None = None
+class KillsScoreboard(Board):
     _kills_collection: AsyncIOMotorCollection | None
-    file_path = "./persist/kills_msg_id"
+
+    @property
+    def file_path(self) -> str:
+        return "./persist/kills_msg_id"
 
     def __init__(
-        self,
-        channel_id: int,
-        kills_collection: AsyncIOMotorCollection | NameError,
-        intents: discord.Intents,
-        **kwargs,
+        self, kills_collection: AsyncIOMotorCollection, channel_id, time_interval=60
     ):
-        self._channel_id = channel_id
         self._kills_collection = kills_collection
-        super().__init__(intents=intents, **kwargs)
-
-    async def on_ready(self):
-        logger.info(f"Retrieving kills scoreboard channel {self._channel_id}")
-        self._channel = await self.fetch_channel(self._channel_id)
-        await self.delete_previous_message()
-        self.job.start()
-
-    async def write_msg_id(self):
-        async with aiofiles.open(self.file_path, "w") as file:
-            await file.write(str(self._current_message.id))
-
-    async def delete_previous_message(self) -> str | None:
-        try:
-            file_exists = await aiofiles.os.path.exists(self.file_path)
-            if not file_exists:
-                return
-            msg_id: str | None = ""
-            async with aiofiles.open(self.file_path, "r") as file:
-                msg_id = await file.read()
-            if not msg_id.isdecimal():
-                return
-            parsed_msg_id = int(msg_id)
-            msg = await self._channel.fetch_message(parsed_msg_id)
-            await msg.delete()
-        except Exception as e:
-            logger.error(f"KillsScoreboard: Error deleting existing board: {e}")
+        super().__init__(channel_id, time_interval)
 
     def compute_kdr(self, record: dict) -> list[str]:
         user_name = record.get("user_name", None) or record.get(
@@ -97,7 +63,7 @@ class KillsScoreboard(discord.Client):
         )
         embed.set_footer(
             text=f"""
-Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}
+Updates every {compute_time_txt(self._time_interval_mins)}
 Data has been collecting since 11/20/2024
                 """
         )
@@ -106,7 +72,3 @@ Data has been collecting since 11/20/2024
             asyncio.create_task(self.write_msg_id())
         else:
             await self._current_message.edit(embed=embed)
-
-    @tasks.loop(seconds=BOARD_REFRESH_TIME)
-    async def job(self):
-        await self.send_board()

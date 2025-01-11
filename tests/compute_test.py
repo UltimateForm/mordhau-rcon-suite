@@ -114,6 +114,16 @@ def test_compute_time_txt():
     assert txt == "45 mins"
 
 
+def test_compute_time_txt_one_sec():
+    txt = compute_time_txt(0.0166666666666667)
+    assert txt == "1 sec"
+
+
+def test_compute_time_txt_thirty_secs():
+    txt = compute_time_txt(0.5)
+    assert txt == "30 secs"
+
+
 def test_compute_time_txt_one_hours():
     txt = compute_time_txt(60)
     assert txt == "1 hour"

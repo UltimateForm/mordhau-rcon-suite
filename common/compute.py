@@ -40,10 +40,16 @@ def compute_next_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]
     return (next_gate, gate_txt)
 
 
+# TODO: use compute_next_gate instead of the inline if statements
 def compute_time_txt(minutes: int):
     is_less_than_hour = minutes < 60
-    unit = "mins" if is_less_than_hour else "hours"
-    time = minutes if is_less_than_hour else round(minutes / 60, 1)
+    is_less_than_minute = minutes < 1
+    unit = "secs" if is_less_than_minute else "mins" if is_less_than_hour else "hours"
+    time = (
+        round(60 * minutes)
+        if is_less_than_minute
+        else minutes if is_less_than_hour else round(minutes / 60, 1)
+    )
     if time == 1:
         unit = unit.removesuffix("s")
     time_without_floating_zero = str(time).removesuffix(r".0")
