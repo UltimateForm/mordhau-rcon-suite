@@ -45,6 +45,9 @@ class RconListener(Subject[str], RconClient):
             rewarm_task = asyncio.create_task(self.warmer())
             while True:
                 pck = await self.recv_pkt()
+                logger.debug(f"{self._event} listener received event: {pck.body}")
+                if pck.body.startswith("Keeping client alive"):
+                    continue
                 self.on_next(pck.body)
         except Exception:
             if rewarm_task:

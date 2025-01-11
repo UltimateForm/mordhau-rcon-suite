@@ -2,7 +2,7 @@ import asyncio
 from reactivex import Observer
 
 from common.compute import compute_gate_text, compute_next_gate_text, compute_time_txt
-from common.parsers import parse_chat_event
+from common.models import ChatEvent
 from config_client.models import PtConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
@@ -11,7 +11,7 @@ from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
 
 
-class IngameCommands(Observer[str]):
+class IngameCommands(Observer[ChatEvent]):
     _config: PtConfig
     _playtime_collection: AsyncIOMotorCollection | None = None
     _kills_collection: AsyncIOMotorCollection | None = None
@@ -80,8 +80,7 @@ class IngameCommands(Observer[str]):
         async with RconContext() as client:
             await client.execute(f"say {full_msg}")
 
-    def on_next(self, value: str) -> None:
-        event_data = parse_chat_event(value)
+    def on_next(self, event_data: ChatEvent) -> None:
         if not event_data:
             return
         message = event_data.message.rstrip()

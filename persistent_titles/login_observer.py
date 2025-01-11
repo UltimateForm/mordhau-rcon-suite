@@ -5,11 +5,9 @@ from persistent_titles.playtime_client import PlaytimeClient
 from common.compute import compute_gate_text
 from config_client.models import PtConfig
 from rcon.rcon import RconContext
-from rcon.rcon_listener import RconListener
-from common.parsers import parse_login_event
 
 
-class LoginObserver(Observer[str]):
+class LoginObserver(Observer[LoginEvent]):
     _config: PtConfig
     playtime_client: PlaytimeClient | None
 
@@ -69,8 +67,7 @@ class LoginObserver(Observer[str]):
             async with RconContext() as client:
                 await client.execute(f"renameplayer {playfab_id} {rename}")
 
-    def on_next(self, value: str) -> None:
-        event_data = parse_login_event(value)
+    def on_next(self, event_data: LoginEvent) -> None:
         if not event_data:
             return
         order = event_data.instance.lower()
@@ -79,13 +76,3 @@ class LoginObserver(Observer[str]):
         asyncio.create_task(self.handle_rename(event_data))
         asyncio.create_task(self.handle_salute(event_data))
         asyncio.create_task(self.handle_tag(event_data))
-
-
-if __name__ == "__main__":
-    login_listener = RconListener("login")
-    manager = LoginObserver(
-        PtConfig({"PLAYFABID": "MORBIUS"}, {"PLAYFABID": "IT'S MORBIN TIME"})
-    )
-    login_listener.subscribe(manager)
-
-    asyncio.run(login_listener.start())

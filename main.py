@@ -16,6 +16,8 @@ from db_kills.main import DbKills
 from boards.playtime import PlayTimeScoreboard
 from killstreaks.main import KillStreaks
 from discord.ext.commands import Bot
+from reactivex import operators
+from common.parsers import parse_chat_event, parse_login_event, parse_killfeed_event
 
 load_dotenv()
 
@@ -28,12 +30,21 @@ async def main():
     register_dc_player_commands(dc_bot, db)
     player_store = PlayerStore()
     login_listener = RconListener(event="login", listening=False)
+    login_events = login_listener.pipe(
+        operators.map(parse_login_event), operators.filter(bool)
+    )
     killfeed_listener = RconListener(event="killfeed", listening=False)
+    killfeed_events = killfeed_listener.pipe(
+        operators.map(parse_killfeed_event), operators.filter(bool)
+    )
     chat_listener = RconListener("chat")
-    migrant_titles = MigrantTitles(killfeed_listener, player_store)
-    peristent_titles = PersistentTitles(login_listener, dc_bot)
+    chat_events = chat_listener.pipe(
+        operators.map(parse_chat_event), operators.filter(bool)
+    )
+    migrant_titles = MigrantTitles(killfeed_events, player_store)
+    peristent_titles = PersistentTitles(login_events, dc_bot)
     ingame_commands = IngameCommands(pt_config, db)
-    db_kills = DbKills(db["kills"], killfeed_listener, player_store)
+    db_kills = DbKills(db["kills"], killfeed_events, player_store)
     killstreaks = KillStreaks() if bot_config.ks_enabled else None
     playtime_channel = bot_config.playtime_channel
     kills_channel = bot_config.kills_channel
@@ -46,7 +57,7 @@ async def main():
     if bot_config.info_board_enabled():
         info_board = InfoBoard(bot_config.info_channel, bot_config.info_refresh_time)
         dc_client.subscribe(info_board)
-    chat_listener.subscribe(ingame_commands)
+    chat_events.subscribe(ingame_commands)
     dc_client.subscribe(playtime_scoreboard)
     dc_client.subscribe(kills_scoreboard)
 
@@ -75,12 +86,13 @@ async def main():
         killfeed_listener.subscribe(killstreaks)
         tasks.append(matchstate_listener.start())
 
-    def entrance_desk(raw: str):
+    def entrance_desk(player: LoginEvent):
         try:
-            player = parsers.parse_login_event(raw)
             if player is None:
                 return
             if player.instance == "out":
+                if migrant_titles.rex_compute.current_rex == player.player_id:
+                    migrant_titles.rex_compute.current_rex = ""
                 player_store.players.pop(player.player_id, None)
                 if killstreaks:
                     asyncio.create_task(
@@ -90,10 +102,10 @@ async def main():
                 player_store.players[player.player_id] = player.user_name
         except Exception as e:
             logger.error(
-                f"Failed to populate player store with event '{raw}'; Error: {e}"
+                f"Failed to populate player store with event '{player}'; Error: {e}"
             )
 
-    login_listener.subscribe(entrance_desk)
+    login_events.subscribe(entrance_desk)
 
     def handle_tag_for_removed_rex(event: MigrantComputeEvent):
         logger.debug(f"handle_tag_for_removed_rex {event}")
