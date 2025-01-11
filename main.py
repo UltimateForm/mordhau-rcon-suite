@@ -6,7 +6,7 @@ from boards.info import InfoBoard
 from boards.kills import KillsScoreboard
 from common import logger, parsers
 from common.models import LoginEvent, PlayerStore
-from common.discord import common_intents
+from common.discord import ObservableDiscordClient, common_intents
 from database.main import load_db
 from ingame_cmd.main import IngameCommands
 from persistent_titles.main import PersistentTitles
@@ -23,6 +23,8 @@ load_dotenv()
 async def main():
     db = load_db()
     dc_bot = Bot(command_prefix=".", intents=common_intents, help_command=None)
+    d_token = bot_config.d_token
+    dc_client = ObservableDiscordClient(intents=common_intents)
     register_dc_player_commands(dc_bot, db)
     player_store = PlayerStore()
     login_listener = RconListener(event="login", listening=False)
@@ -36,22 +38,26 @@ async def main():
     playtime_channel = bot_config.playtime_channel
     kills_channel = bot_config.kills_channel
     playtime_scoreboard = PlayTimeScoreboard(
-        playtime_channel, db["playtime"], common_intents
+        db["playtime"], playtime_channel, bot_config.playtime_refresh_time
     )
-    kills_scoreboard = KillsScoreboard(kills_channel, db["kills"], common_intents)
-    d_token = bot_config.d_token
-
+    kills_scoreboard = KillsScoreboard(
+        db["kills"], kills_channel, bot_config.kills_refresh_time
+    )
+    if bot_config.info_board_enabled():
+        info_board = InfoBoard(bot_config.info_channel, bot_config.info_refresh_time)
+        dc_client.subscribe(info_board)
     chat_listener.subscribe(ingame_commands)
+    dc_client.subscribe(playtime_scoreboard)
+    dc_client.subscribe(kills_scoreboard)
 
     tasks = [
         login_listener.start(),
         killfeed_listener.start(),
         chat_listener.start(),
         peristent_titles.start(db),
-        playtime_scoreboard.start(token=d_token),
-        kills_scoreboard.start(token=d_token),
         db_kills.start(),
         dc_bot.start(token=d_token),
+        dc_client.start(token=d_token),
     ]
 
     if killstreaks:
@@ -101,10 +107,6 @@ async def main():
 
     migrant_titles.rex_compute.subscribe(handle_tag_for_removed_rex)
 
-    if bot_config.info_board_enabled():
-        info_channel = bot_config.info_channel
-        info_board = InfoBoard(info_channel, common_intents)
-        tasks.append(info_board.start(d_token))
     await asyncio.gather(*tasks)
 
 

@@ -1,60 +1,19 @@
 import asyncio
-import aiofiles
-import aiofiles.os
-import discord
-from discord.ext import tasks
-from datetime import datetime, timezone
+from datetime import timezone, datetime
+from itertools import takewhile
+from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
 from common.discord import make_embed
 from rcon.rcon import RconContext
-from itertools import takewhile
-from config_client.data import bot_config
-
-BOARD_REFRESH_TIME = bot_config.info_refresh_time or 30
+import discord
 
 
-# TODO: create base class for these boards, too much duplication
-class InfoBoard(discord.Client):
-    _channel_id: int = 0
-    _channel: discord.TextChannel | None = None
-    _current_message: discord.Message | None = None
-    file_path = "./persist/info_msg_id"
+class InfoBoard(Board):
 
-    def __init__(
-        self,
-        channel_id: int,
-        intents: discord.Intents,
-        **kwargs,
-    ):
-        self._channel_id = channel_id
-        super().__init__(intents=intents, **kwargs)
-
-    async def on_ready(self):
-        logger.info(f"Retrieving info board channel {self._channel_id}")
-        self._channel = await self.fetch_channel(self._channel_id)
-        await self.delete_previous_message()
-        self.job.start()
-
-    async def write_msg_id(self):
-        async with aiofiles.open(self.file_path, "w") as file:
-            await file.write(str(self._current_message.id))
-
-    async def delete_previous_message(self) -> str | None:
-        try:
-            file_exists = await aiofiles.os.path.exists(self.file_path)
-            if not file_exists:
-                return
-            msg_id: str | None = ""
-            async with aiofiles.open(self.file_path, "r") as file:
-                msg_id = await file.read()
-            if not msg_id.isdecimal():
-                return
-            parsed_msg_id = int(msg_id)
-            msg = await self._channel.fetch_message(parsed_msg_id)
-            await msg.delete()
-        except Exception as e:
-            logger.error(f"InfoBoard: Error deleting existing board: {e}")
+    @property
+    def file_path(self) -> str:
+        return "./persist/info_msg_id"
 
     async def send_board(self):
         try:
@@ -80,12 +39,14 @@ class InfoBoard(discord.Client):
                 server_info.server_name,
                 description=time_sig,
                 color=discord.Colour(3447003),
-                footer_txt=f"Updates every {compute_time_txt(BOARD_REFRESH_TIME/60)}",
+                footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
             )
             embed.add_field(name="Gamemode", value=server_info.game_mode)
             embed.add_field(name="Map", value=server_info.map)
             embed.add_field(
-                name=f"Players online: ({len(players)})", value=players_block, inline=False
+                name=f"Players online: ({len(players)})",
+                value=players_block,
+                inline=False,
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
@@ -94,7 +55,3 @@ class InfoBoard(discord.Client):
                 await self._current_message.edit(embed=embed)
         except Exception as e:
             logger.error(f"Failed to update server info board {e}")
-
-    @tasks.loop(seconds=BOARD_REFRESH_TIME)
-    async def job(self):
-        await self.send_board()
