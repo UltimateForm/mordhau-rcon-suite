@@ -4,7 +4,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
 from pymongo import UpdateOne
-from common.models import KillRecord, PlayerStore
+from common.models import KillRecord, PlayerStore, KillfeedEvent
 from common import logger, parsers
 
 
@@ -17,15 +17,15 @@ class DbKills:
     def __init__(
         self,
         db_collection: AsyncIOMotorCollection,
-        killfeed_observable: Observable[str],
+        killfeed_observable: Observable[KillfeedEvent],
         player_store: PlayerStore,
     ):
         self._pending_records = []
         self._collection = db_collection
         self._player_store = player_store
 
-        def _launch_kill_feed_task(raw_event: str):
-            asyncio.create_task(self._process_killfeed(raw_event))
+        def _launch_kill_feed_task(event: KillfeedEvent):
+            asyncio.create_task(self._process_killfeed(event))
 
         killfeed_observable.subscribe(_launch_kill_feed_task)
 
@@ -55,9 +55,8 @@ class DbKills:
                 f"DbKills - Updated {len(tasks)} kill records: {bulk_write.bulk_api_result}"
             )
 
-    async def _process_killfeed(self, raw: str):
+    async def _process_killfeed(self, kill_event: KillfeedEvent):
         try:
-            kill_event = parsers.parse_killfeed_event(raw)
             if kill_event is None or kill_event.killed_id is None:
                 return
             killed_id = kill_event.killed_id

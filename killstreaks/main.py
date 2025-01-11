@@ -74,7 +74,7 @@ class KillStreaks(Observer[str]):
         streak_gates = [
             int(key) for key in self._config.streak.keys() if key.isnumeric()
         ]
-        if current_streak < min(streak_gates):
+        if current_streak < min(streak_gates or [5]):
             return
         async with asyncio.timeout(10):
             async with RconContext() as client:

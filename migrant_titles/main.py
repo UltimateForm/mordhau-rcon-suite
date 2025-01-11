@@ -5,7 +5,7 @@ from common.models import KillfeedEvent, PlayerStore
 from config_client.data import pt_config, bot_config
 from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
-from common import parsers, logger
+from common import logger
 
 DEFAULT_REX_TITLE = "REX"
 
@@ -106,51 +106,17 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         except Exception as e:
             logger.error(f"Failed to process REX tag compute, {str(e)}")
 
-    def process_killfeed_raw_event(self, event: str):
-        logger.debug(f"EVENT: {event}")
-        event_data = parsers.parse_killfeed_event(event)
-        if event_data:
-            self._process_killfeed_event(event_data)
-
-    def process_login_raw_event(self, event: str):
-        logger.debug(f"EVENT: {event}")
-        event_data = parsers.parse_login_event(event)
-        if not event_data:
-            return
-
-        event_order = event_data.instance
-        if event_order == "out":
-            logged_out_playfab_id = event_data.player_id
-            if (
-                logged_out_playfab_id
-                and logged_out_playfab_id in self._player_store.players.keys()
-            ):
-                self._player_store.players.pop(logged_out_playfab_id)
-            if self.current_rex == logged_out_playfab_id:
-                self.current_rex = ""
-        else:
-            playfab_id = event_data.player_id
-            username = event_data.user_name
-            if playfab_id and username:
-                self._player_store[playfab_id] = username
-
 
 class MigrantTitles:
-    _killfeed_observable: Observable[str]
+    _killfeed_observable: Observable[KillfeedEvent]
     rex_compute: TitleCompute
 
-    def __init__(self, killfeed_listener: Observable[str], player_store: PlayerStore):
+    def __init__(
+        self, killfeed_listener: Observable[KillfeedEvent], player_store: PlayerStore
+    ):
         self._killfeed_observable = killfeed_listener
         self.rex_compute = TitleCompute(player_store)
-        self._killfeed_observable.subscribe(self.rex_compute.process_killfeed_raw_event)
-
-    # async def start(self):
-    #     await self._killfeed_observable.start()
-
-
-# async def start_migrant_titles(login_observable: Observable[str]):
-#     migrant_titles = MigrantTitles(login_observable)
-#     await migrant_titles.start()
+        self._killfeed_observable.subscribe(self.rex_compute._process_killfeed_event)
 
 
 async def main():
