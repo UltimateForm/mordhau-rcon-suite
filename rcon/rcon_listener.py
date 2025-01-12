@@ -7,14 +7,16 @@ RECONNECT_WAIT_TIME_SECS = 5
 
 
 class RconListener(Subject[str], RconClient):
-    _event: str
+    _event: list[str] | str
     _port: int
     _password: str
     _address: str
 
     _listening: bool
 
-    def __init__(self, event: str = "chat", listening: bool = False) -> None:
+    def __init__(
+        self, event: list[str] | str = "chat", listening: bool = False
+    ) -> None:
         self._event = event
         self._listening = listening
         Subject.__init__(self)
@@ -40,8 +42,14 @@ class RconListener(Subject[str], RconClient):
             await self.authenticate()
             logger.info(f"{self._event} listener: authentication complete")
             if not listening:
-                r = await self.execute(f"listen {self._event}")
-                logger.info(f"{self._event} listener: {r}")
+                events_to_listen: list[str] = []
+                if type(self._event) is str:
+                    events_to_listen.append(self._event)
+                else:
+                    events_to_listen = self._event
+                for event in self._event:
+                    r = await self.execute(f"listen {event}")
+                    logger.info(f"{self._event} listener: {r}")
             rewarm_task = asyncio.create_task(self.warmer())
             while True:
                 pck = await self.recv_pkt()

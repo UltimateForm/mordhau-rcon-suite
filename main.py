@@ -29,17 +29,21 @@ async def main():
     dc_client = ObservableDiscordClient(intents=common_intents)
     register_dc_player_commands(dc_bot, db)
     player_store = PlayerStore()
-    login_listener = RconListener(event="login", listening=False)
-    login_events = login_listener.pipe(
-        operators.map(parse_login_event), operators.filter(bool)
+    events_to_listen = ["login", "killfeed", "chat"]
+    if bot_config.ks_enabled:
+        events_to_listen.append("matchstate")
+    bulk_listener = RconListener(event=events_to_listen)
+    login_events = bulk_listener.pipe(
+        operators.filter(lambda x: x.startswith("Login")),
+        operators.map(parse_login_event),
     )
-    killfeed_listener = RconListener(event="killfeed", listening=False)
-    killfeed_events = killfeed_listener.pipe(
-        operators.map(parse_killfeed_event), operators.filter(bool)
+    killfeed_events = bulk_listener.pipe(
+        operators.filter(lambda x: x.startswith("Killfeed")),
+        operators.map(parse_killfeed_event),
     )
-    chat_listener = RconListener("chat")
-    chat_events = chat_listener.pipe(
-        operators.map(parse_chat_event), operators.filter(bool)
+    chat_events = bulk_listener.pipe(
+        operators.filter(lambda x: x.startswith("Chat")),
+        operators.map(parse_chat_event),
     )
     migrant_titles = MigrantTitles(killfeed_events, player_store)
     peristent_titles = PersistentTitles(login_events, dc_bot)
@@ -62,9 +66,7 @@ async def main():
     dc_client.subscribe(kills_scoreboard)
 
     tasks = [
-        login_listener.start(),
-        killfeed_listener.start(),
-        chat_listener.start(),
+        bulk_listener.start(),
         peristent_titles.start(db),
         db_kills.start(),
         dc_bot.start(token=d_token),
@@ -83,8 +85,7 @@ async def main():
                 killstreaks.reset()
 
         matchstate_listener.subscribe(matchstate_next)
-        killfeed_listener.subscribe(killstreaks)
-        tasks.append(matchstate_listener.start())
+        killfeed_events.subscribe(killstreaks)
 
     def entrance_desk(player: LoginEvent):
         try:
