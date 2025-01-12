@@ -122,8 +122,19 @@ async def main():
     await asyncio.gather(*tasks)
 
 
+async def main2():
+    listener = RconListener(["chat", "killfeed"])
+    chat_events = listener.pipe(operators.filter(lambda x: x.startswith("Chat")))
+    killfeed_events = listener.pipe(
+        operators.filter(lambda x: x.startswith("Killfeed"))
+    )
+    chat_events.subscribe(logger.info)
+    killfeed_events.subscribe(logger.info)
+    await listener.start()
+
+
 if __name__ == "__main__":
     logger.use_date_time_logger()
     logger.info("INIT")
-    asyncio.run(main())
+    asyncio.run(main2())
     logger.info("END")
