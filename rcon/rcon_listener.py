@@ -47,7 +47,7 @@ class RconListener(Subject[str], RconClient):
                     events_to_listen.append(self._event)
                 else:
                     events_to_listen = self._event
-                for event in self._event:
+                for event in events_to_listen:
                     r = await self.execute(f"listen {event}")
                     logger.info(f"{self._event} listener: {r}")
             rewarm_task = asyncio.create_task(self.warmer())
