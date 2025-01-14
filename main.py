@@ -148,8 +148,7 @@ class MordhauRconSuite:
             def matchstate_next(state: str):
                 if not state:
                     return
-                stripped_state = state.strip("\x00")
-                if stripped_state.lower() == "in progress":
+                if state.lower() == "in progress":
                     self.killstreaks.reset()
 
             self.matchstate_events.subscribe(matchstate_next)
