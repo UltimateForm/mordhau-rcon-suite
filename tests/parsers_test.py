@@ -34,7 +34,7 @@ def test_parses_killfeed_event():
 
 
 def test_parses_server_info():
-    event_raw = "HostName: TEST_DEKSTOP\nServerName: Server\nVersion: Release 26, Revision 25635, Enforced 1, Release Ver: 7\nGameMode: Skirmish\nMap: Grad\n\x00\x00"
+    event_raw = "HostName: TEST_DEKSTOP\nServerName: Server\nVersion: Release 26, Revision 25635, Enforced 1, Release Ver: 7\nGameMode: Skirmish\nMap: Grad"
     expected_data = models.ServerInfo(
         "TEST_DEKSTOP",
         "Server",

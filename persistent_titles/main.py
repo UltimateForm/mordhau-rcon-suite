@@ -1,5 +1,5 @@
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorCollection
 from reactivex import Observable
 from common.models import LoginEvent
 from persistent_titles.login_observer import LoginObserver
@@ -17,13 +17,29 @@ class PersistentTitles:
     _login_observable: Observable[LoginEvent]
 
     def __init__(
-        self, login_observable: Observable[LoginEvent], bot: Bot | None = None
+        self,
+        login_observable: Observable[LoginEvent],
+        bot: Bot | None = None,
+        playtime_collection: AsyncIOMotorCollection | None = None,
+        live_sessions_collection: AsyncIOMotorCollection | None = None,
     ):
         self._login_observable = login_observable
         self.login_observer = LoginObserver(pt_config)
         self._login_observable.subscribe(self.login_observer)
         if bot:
             register_cfg_dc_commands(bot)
+
+        playtime_client: PlaytimeClient | None = None
+        playtime_enabled = False
+        if live_sessions_collection is not None and playtime_collection is not None:
+            logger.info("Enabling playtime titles as DB is loaded")
+            playtime_client = PlaytimeClient(playtime_collection)
+            playtime_enabled = True
+        else:
+            logger.info("Keeping playtime titles disabled as DB is not loaded")
+        self.login_observer.playtime_client = playtime_client
+        if playtime_enabled:
+            self.enable_playtime(playtime_client, live_sessions_collection)
 
     def enable_playtime(
         self,
@@ -46,23 +62,3 @@ class PersistentTitles:
                 asyncio.create_task(session_topic.logout(playfab_id, user_name, date))
 
         self._login_observable.subscribe(session_topic_login_handler)
-
-    async def start(
-        self,
-        db: AsyncIOMotorDatabase | None,
-    ):
-        playtime_collection: AsyncIOMotorCollection | None = None
-        playtime_client: PlaytimeClient | None = None
-        live_sessions_collection: AsyncIOMotorCollection | None = None
-        playtime_enabled = False
-        if db is not None:
-            logger.info("Enabling playtime titles as DB is loaded")
-            playtime_collection = db["playtime"]
-            live_sessions_collection = db["live_session"]
-            playtime_client = PlaytimeClient(playtime_collection)
-            playtime_enabled = True
-        else:
-            logger.info("Keeping playtime titles disabled as DB is not loaded")
-        self.login_observer.playtime_client = playtime_client
-        if playtime_enabled:
-            self.enable_playtime(playtime_client, live_sessions_collection)
