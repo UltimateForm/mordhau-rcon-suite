@@ -1,11 +1,11 @@
 import asyncio
 import random
 from reactivex import Observer
-from common.parsers import parse_killfeed_event
 from common.compute import compute_gate
 from config_client.data import ks_config
 from config_client.models import KsConfig
 from rcon.rcon import RconContext
+from common.models import KillfeedEvent
 
 
 def get_closest_multiple(n: int, factor: int):
@@ -20,7 +20,7 @@ def get_template(streak: int, source: dict[str, str | list[str]]) -> str | None:
         return target
 
 
-class KillStreaks(Observer[str]):
+class KillStreaks(Observer[KillfeedEvent]):
     tally = dict[str, int]
     _first_blood_claimed = False
     _config: KsConfig
@@ -92,8 +92,7 @@ class KillStreaks(Observer[str]):
             async with RconContext() as client:
                 await client.execute(f"say {msg}")
 
-    def on_next(self, raw: str):
-        kill_event = parse_killfeed_event(raw)
+    def on_next(self, kill_event: KillfeedEvent):
         if kill_event is None or not kill_event.killed_id or not kill_event.killer_id:
             return
         asyncio.create_task(

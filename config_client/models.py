@@ -51,6 +51,7 @@ class BotConfig(IOBoundDataclass):
     title: str = "KING"
     db_connection_string: str = "mongodb+srv://user:password@0.0.0.0"
     db_name: str = "db"
+    experimental_bulk_listener: bool = False
 
     def info_board_enabled(self):
         return bool(self.info_channel)

@@ -14,7 +14,7 @@ GROK_KILLFEED_EVENT = r"%{WORD:event_type}: %{NOTSPACE:date}: (?:%{NOTSPACE:kill
 GROK_LOGIN_EVENT = r"%{WORD:event_type}: %{NOTSPACE:date}: %{GREEDYDATA:user_name} \(%{WORD:player_id}\) logged %{WORD:instance}"
 DATE_FORMAT = r"%Y.%m.%d-%H.%M.%S"
 GROK_CHAT_EVENT = r"%{WORD:event_type}: %{NOTSPACE:player_id}, %{GREEDYDATA:user_name}, \(%{WORD:channel}\) %{GREEDYDATA:message}"
-GROK_SERVER_INFO = r"HostName: %{GREEDYDATA:host}\nServerName: %{GREEDYDATA:server_name}\nVersion: %{GREEDYDATA:version}\nGameMode: %{GREEDYDATA:game_mode}\nMap: %{GREEDYDATA:map}\n"
+GROK_SERVER_INFO = r"HostName: %{GREEDYDATA:host}\nServerName: %{GREEDYDATA:server_name}\nVersion: %{GREEDYDATA:version}\nGameMode: %{GREEDYDATA:game_mode}\nMap: %{GREEDYDATA:map}"
 GROK_PLAYERLIST_ROW = (
     r"%{NOTSPACE:player_id}, %{GREEDYDATA:user_name}, %{GREEDYDATA}, %{GREEDYDATA}"
 )
