@@ -6,6 +6,7 @@ from config_client.data import pt_config, bot_config
 from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
 from common import logger
+import random
 
 DEFAULT_REX_TITLE = "REX"
 
@@ -15,6 +16,20 @@ class MigrantComputeEvent:
     event_type: str  # removed/placed
     playfab_id: str
     user_name: str
+
+
+VACANCY_MIGRANCY_TEMPLATES = [
+    "{0} has defeated {1} and claimed the vacant {2} title",
+    "After defeating {1}, {0} has now become the holder of the vacant {2} title",
+    "{0} defeated {1} to claim the vacant {2} title.",
+]
+MIGRANCY_TEMPLATES = [
+    "{0} has defeated {1} and claimed his {2} title",
+    "{0} has triumphed over {1} and secured his {2} title.",
+    "{0} defeated {1} to seize his {2} title.",
+    "Having beaten {1}, {0} has now claimed his {2} title."
+    "{0} has downed {1} and is now the holder of his {2} title.",
+]
 
 
 # doesn't really need to be a class....
@@ -50,6 +65,11 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
         task.add_done_callback(callback)
 
+    def _get_migrancy_text(self, templates: list[str], killer: str, killed: str):
+        template = random.choice(templates)
+        txt = template.format(killer, killed, self.rex_tile)
+        return txt
+
     def _place_rex(self, playfab_id: str, user_name):
         target_name = self._sanitize_name(playfab_id, user_name)
         task = asyncio.create_task(
@@ -70,19 +90,15 @@ class TitleCompute(Subject[MigrantComputeEvent]):
             killer_playfab_id = event_data.killer_id
             killed_playfab_id = event_data.killed_id
             if not self.current_rex and killer_playfab_id:
-                asyncio.create_task(
-                    self._execute_command(
-                        f"say {killer} has defeated {killed} and claimed the vacant {self.rex_tile} title"
-                    )
+                empty_tile_msg = self._get_migrancy_text(
+                    VACANCY_MIGRANCY_TEMPLATES, killer, killed
                 )
+                asyncio.create_task(self._execute_command(f"say {empty_tile_msg}"))
                 self._place_rex(killer_playfab_id, killer)
                 self.current_rex = killer_playfab_id
             elif killed_playfab_id and self.current_rex == killed_playfab_id:
-                asyncio.create_task(
-                    self._execute_command(
-                        f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
-                    )
-                )
+                title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
+                asyncio.create_task(self._execute_command(f"say {title_msg}"))
                 if killer_playfab_id:
                     self._place_rex(killer_playfab_id, killer)
                 self._remove_rex(killed_playfab_id, killed)
