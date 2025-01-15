@@ -25,6 +25,7 @@ from common.parsers import (
 from config_client.models import BotConfig, PtConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 from typing import Coroutine
+from monitoring.chat_logs import ChatLogs
 
 load_dotenv()
 
@@ -75,6 +76,7 @@ class MordhauRconSuite:
             self.set_up_listeners()
         self.set_up_experiences()
         self.set_up_boards()
+        self.set_up_monitoring()
 
     def _entrance_desk(self, player: LoginEvent):
         try:
@@ -153,6 +155,12 @@ class MordhauRconSuite:
 
             self.matchstate_events.subscribe(matchstate_next)
             self.killfeed_events.subscribe(self.killstreaks)
+
+    def set_up_monitoring(self):
+        if not self._bot_config.chat_logs_channel:
+            return
+        chat_logs = ChatLogs(self._dc_client, self._bot_config.chat_logs_channel)
+        self.chat_events.subscribe(chat_logs)
 
     def set_up_db(self):
         db_connection = self._bot_config.db_connection_string
