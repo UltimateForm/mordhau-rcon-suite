@@ -159,7 +159,9 @@ class MordhauRconSuite:
     def set_up_monitoring(self):
         if not self._bot_config.chat_logs_channel:
             return
-        chat_logs = ChatLogs(self._dc_client, self._bot_config.chat_logs_channel)
+        chat_logs = ChatLogs(
+            self._dc_client, self._bot_config.chat_logs_channel, self._dc_bot
+        )
         self.chat_events.subscribe(chat_logs)
 
     def set_up_db(self):
