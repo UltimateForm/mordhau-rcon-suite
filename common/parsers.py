@@ -45,7 +45,8 @@ def parse_login_event(event: str) -> LoginEvent | None:
 
 
 def parse_chat_event(event: str) -> ChatEvent | None:
-    (success, parsed) = parse_event(event, GROK_CHAT_EVENT)
+    without_new_lines = r" \ ".join(event.splitlines())
+    (success, parsed) = parse_event(without_new_lines, GROK_CHAT_EVENT)
     if not success:
         return None
     return ChatEvent(**parsed)

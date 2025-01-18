@@ -19,6 +19,15 @@ def test_parses_chat_event():
     assert event_expected == event_parsed
 
 
+def test_parses_multi_line_chat_event():
+    event_raw = "Chat: SA213123AKA872, John Wayne, (ALL) line 1\r\nline 2\r\nline 3"
+    event_expected = models.ChatEvent(
+        "Chat", "SA213123AKA872", "John Wayne", "ALL", r"line 1 \ line 2 \ line 3"
+    )
+    event_parsed = parsers.parse_chat_event(event_raw)
+    assert event_expected == event_parsed
+
+
 def test_parses_killfeed_event():
     event_raw = "Killfeed: 2024.10.12-21.33.28: SA213123AKA872 (John Wayne (smartass)) killed ASDDU1231215GR (Blattant Ottobloking)"
     event_expected = models.KillfeedEvent(

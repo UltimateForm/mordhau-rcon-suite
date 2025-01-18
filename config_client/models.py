@@ -42,6 +42,7 @@ class BotConfig(IOBoundDataclass):
     kills_refresh_time: Optional[int] = None
     info_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
+    chat_logs_channel: Optional[int] = None
     config_bot_channel: int = 0
     rcon_password: str = ""
     rcon_address: str = "0.0.0.0"

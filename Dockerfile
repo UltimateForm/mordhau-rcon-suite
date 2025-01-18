@@ -14,7 +14,7 @@ ADD ./common/* ./common
 
 ADD ./boards/* ./boards
 
-ADD ./db-kills/* ./db-kills
+ADD ./db_kills/* ./db_kills
 
 ADD ./database/* ./database
 
@@ -30,6 +30,14 @@ ADD ./persistent_titles/* ./persistent_titles
 
 ADD ./rcon/* ./rcon
 
+ADD ./monitoring/* ./monitoring
+
+COPY ./dc_player_commands/* ./dc_player_commands 
+
+COPY ./killstreaks ./killstreaks
+
+
 COPY ./main.py ./
+
 
 CMD ["pipenv", "run", "python", "main.py"]

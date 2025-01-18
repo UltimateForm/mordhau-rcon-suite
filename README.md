@@ -6,9 +6,11 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
 - sending scoreboards to discord
   - kills
   - playtime
-  - checking indivdual player playtime, killscore, and lifetime match score against another player
+  - checking individual player playtime, killscore, and lifetime match score against another player
 - player list/server info
-
+- chat logs
+  - discord notification when someone includes "@admin" in the chat
+  - bi-directional, `.say` command to send chat form discord into game
 
 If you need custom changes please reach out to me on discord or create an issue.
 
@@ -23,6 +25,7 @@ If you need custom changes please reach out to me on discord or create an issue.
         - [example](#example)
       - [b) via `./persist/bot.config.json`](#b-via-persistbotconfigjson)
         - [example](#example-1)
+      - [Experimental settings](#experimental-settings)
     - [3. setup MONGODB TABLES (COLLECTIONS)](#3-setup-mongodb-tables-collections)
     - [4. run bot](#4-run-bot)
   - [Killstreaks](#killstreaks)
@@ -39,6 +42,8 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Ingame features](#ingame-features)
       - [.env Config](#env-config)
       - [FAQ](#faq)
+  - [Chat logs](#chat-logs)
+    - [Commands](#commands)
   - [Ingame commands](#ingame-commands)
   - [Discord usage](#discord-usage)
     - [Config commands](#config-commands)
@@ -46,7 +51,7 @@ If you need custom changes please reach out to me on discord or create an issue.
     - [Boards](#boards)
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
-    - [Important notes](#important-notes)
+  - [IMPORTANT NOTES](#important-notes)
 
 ## Setup
 You need at least Docker installed and a terminal that can run .sh files (linux or unix-like system)
@@ -87,6 +92,8 @@ Here's how the config is loaded:
     16. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
     17. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
     18. KS_ENABLED (optional, 1 for enabled, 0 for disabled, default disabled)
+    19. CHAT_LOGS_CHANNEL (optional, channel to post chat logs)
+    20. EXPERIMENTAL_BULK_LISTENER (optional, 1 for enabled, 0 for disabled)
 
 ##### example
 
@@ -124,6 +131,7 @@ Template:
   "embed_footer_icon": <type string, optional, link to image to be added at footer of embed>,
   "kills_channel": <type number, channel to post kills/death/ratio scoreboard, read more at #boards>,
   "playtime_channel": <type number, channel to post playtime scoreboard, read more at #boards>,
+  "chat_logs_channel": <type number, channel to post chat logs>,
   "playtime_refresh_time": <type number, time interval in seconds for playtime scoreboard update>,
   "kills_refresh_time": <type number, time interval in seconds for kills/death/ratio scoreboard update>,
   "info_refresh_time": <type, optional, time in seconds to refresh server info card>,
@@ -165,6 +173,10 @@ Template:
 }
 ```
 
+#### Experimental settings
+
+- EXPERIMENTAL_BULK_LISTENER (json `experimental_bulk_listener`)
+  - by default the bot will create different RCON connections per each event it's listening, with this setting enabled the bot will instead reuse the same connection for all the events it needs
 
 ### 3. setup MONGODB TABLES (COLLECTIONS)
 (If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)
@@ -322,6 +334,19 @@ Make sure your instance is located geographically close to bot for best performa
       }
       ```
 
+## Chat logs
+
+NOTE: you can already have mordhau chat logs sent to your server via [the native webhooks](https://mordhau.fandom.com/wiki/Server_Configuration#Webhooks), so consider this just an alternative.
+
+If you have the setting chat logs enabled (refer back to [configuration chapter](#2-configure)) the bot will be sending chat logs to your discord server. The chat logs look like this:
+`ultimate form (TASDK7823KJKJSD7): hello discord`. The playfab id will be a link to [mordhau scribe](https://mordhau-scribe.com/) with info about the player.
+
+### Commands
+
+- .say {message} 
+  - send a message to the server, will be shown ingame as a server message with your discord name prefixed i.e `ultimate form > hello from discord`
+
+
 ## Ingame commands
 
 - .playtime
@@ -443,7 +468,7 @@ Example board with random usernames:
 ╚════════════════════════════════════════════════════╝
 ```
 
-### Important notes
+## IMPORTANT NOTES
 1. This bot doesn't use (yet) the native discord commands
 2. This bot hasn't been stress tested, a previous version has been tested on a server with 20-40 players, but was different code
 3. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
