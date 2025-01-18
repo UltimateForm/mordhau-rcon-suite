@@ -12,7 +12,11 @@ def make_embed(
     color: discord.Colour | None = None,
     footer_txt: str | None = None,
 ):
-    footer_txt_env = bot_config.embed_footer_txt or ""
+
+    footer_txt_env = (
+        bot_config.embed_footer_txt
+        or "Bot source: https://github.com/UltimateForm/mordhau-rcon-suite"
+    )
     footer_icon = bot_config.embed_footer_icon
     embed = discord.Embed(title=title, description=description, color=color)
     embed.set_footer(
