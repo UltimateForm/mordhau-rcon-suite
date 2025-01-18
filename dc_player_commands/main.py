@@ -9,6 +9,7 @@ from motor.motor_asyncio import (
 from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
 from rank_compute.kills import get_kills
+import re
 
 
 def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
@@ -102,20 +103,16 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         collection = db["kills"]
         embed.color = 0x080808
         try:
-            queries: list[dict] = []
-            for player in [player1, player2]:
-                if parsers.is_playfab_id_format(player):
-                    queries.append({"playfab_id": player})
-                else:
-                    queries.append({"user_name": {"$regex": player}})
             data: list[dict] = []
-            for query in queries:
+            for player in [player1, player2]:
+                query: dict = {}
+                if parsers.is_playfab_id_format(player):
+                    query = {"playfab_id": player}
+                else:
+                    query = {"user_name": re.compile(f".*{player}.*", re.IGNORECASE)}
                 r = await collection.find_one(query)
                 if r is None:
-                    query_target = query.get(
-                        "playfab_id", query.get("user_name", {}).get("$regex", None)
-                    )
-                    raise Exception(f"{query_target} not found")
+                    raise Exception(f"{player} not found")
                 data.append(r)
             player1_data = data[0]
             player2_data = data[1]
@@ -139,3 +136,4 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         await ctx.message.reply(embed=embed)
 
     bot.command("versus")(versus)
+    bot.command("vs")(versus)
