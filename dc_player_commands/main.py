@@ -25,7 +25,6 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
     async def kdr(ctx: Context, argument: str):
         collection = db["kills"]
         embed = make_embed(ctx)
-        embed.color = 0xFFFC2E
         try:
             kill_score = await get_kills(argument, collection)
             if kill_score is None:
@@ -50,7 +49,6 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
     async def playtime(ctx: Context, argument: str):
         collection = db["playtime"]
         embed = make_embed(ctx)
-        embed.color = 0x43FF2E
         try:
             player_score = await get_playtime(argument, collection)
             if player_score is None:
@@ -101,7 +99,6 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         embed = make_embed(ctx)
         embed.description = "(shows how many times players have killed each other)"
         collection = db["kills"]
-        embed.color = 0x080808
         try:
             data: list[dict] = []
             for player in [player1, player2]:
@@ -124,7 +121,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 name=player1_data.get("user_name"),
                 value=player1_kills.get(player2_id, 0),
             )
-            embed.add_field(name=":vs:", value="")
+            embed.add_field(name="<:Versus:1310139196471644190>", value="")
             embed.add_field(
                 name=player2_data.get("user_name"),
                 value=player2_kills.get(player1_id, 0),

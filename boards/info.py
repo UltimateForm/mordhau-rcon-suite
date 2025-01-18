@@ -4,7 +4,6 @@ from itertools import takewhile
 from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
-from common.discord import make_embed
 from rcon.rcon import RconContext
 import discord
 
@@ -35,18 +34,22 @@ class InfoBoard(Board):
             players_block = "```" + players_text + "```"
             current_time = round(datetime.now(timezone.utc).timestamp())
             time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-            embed = make_embed(
-                server_info.server_name,
+            embed = discord.Embed(
+                title=server_info.server_name,
                 description=time_sig,
-                color=discord.Colour(3447003),
-                footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
+                color=discord.Colour(int("4800FF", 16)),
             )
-            embed.add_field(name="Gamemode", value=server_info.game_mode)
-            embed.add_field(name="Map", value=server_info.map)
+            embed.add_field(name="Gamemode:", value=server_info.game_mode)
+            embed.add_field(name="Current Map:", value=server_info.map)
             embed.add_field(
-                name=f"Players online: ({len(players)})",
+                name=f"Players Online: {len(players)}/55",
                 value=players_block,
                 inline=False,
+            )
+            embed.set_footer(
+                text=f"""
+Updates every {compute_time_txt(self._time_interval_mins)}
+                    """
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
