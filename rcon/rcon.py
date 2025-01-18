@@ -75,8 +75,9 @@ class RconClient:
 
         (pkt_size, pkt_id, pkt_type) = struct.unpack("<3i", header)
         body_bytes = await self._reader.read(pkt_size - 8)
-        body = body_bytes.decode().rstrip("\x00").rstrip()
-        return RconPacket(pkt_id, pkt_type, body)
+        body_raw = body_bytes.decode()
+        body_clean = body_raw.rstrip("\x00").rstrip()
+        return RconPacket(pkt_id, pkt_type, body_clean)
 
     def build_packet_id(self):
         self._counter += 1
