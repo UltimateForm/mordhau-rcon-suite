@@ -36,10 +36,11 @@ class ChatLogs(Observer[ChatEvent]):
             msg = " ".join(args)
             author = ctx.author.display_name
             try:
+                logger.info(f"{self.__class__.__name__}: {ctx.command} '{msg}'")
                 async with RconContext() as client:
                     r = await client.execute(f"say {author} > {msg}")
                     logger.info(
-                        f"{self.__class__.__name__}: {ctx.command} '{msg}': RESPONSE {r}"
+                        f"{self.__class__.__name__}: {r}"
                     )
                 await ctx.message.add_reaction("👌")
             except Exception as e:
