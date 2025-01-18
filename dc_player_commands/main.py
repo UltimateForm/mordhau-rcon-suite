@@ -226,6 +226,7 @@ def register_dc_player_commands(
         usage="<playfab_id_or_username> <playfab_id_or_username>",
         aliases=["vs"],
     )(versus)
+    bot.command("vs")(versus)
 
     async def kills(ctx: Context, playfab_id: str):
         collection = db["kills"]
