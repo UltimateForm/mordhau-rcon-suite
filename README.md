@@ -341,6 +341,8 @@ NOTE: you can already have mordhau chat logs sent to your server via [the native
 If you have the setting chat logs enabled (refer back to [configuration chapter](#2-configure)) the bot will be sending chat logs to your discord server. The chat logs look like this:
 `ultimate form (TASDK7823KJKJSD7): hello discord`. The playfab id will be a link to [mordhau scribe](https://mordhau-scribe.com/) with info about the player.
 
+If someone writes @admin as part of their chat message the bot will mention @here in the discord channel.
+
 ### Commands
 
 - .say {message} 

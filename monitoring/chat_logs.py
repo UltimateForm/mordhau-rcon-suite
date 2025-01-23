@@ -39,9 +39,7 @@ class ChatLogs(Observer[ChatEvent]):
                 logger.info(f"{self.__class__.__name__}: {ctx.command} '{msg}'")
                 async with RconContext() as client:
                     r = await client.execute(f"say {author} > {msg}")
-                    logger.info(
-                        f"{self.__class__.__name__}: {r}"
-                    )
+                    logger.info(f"{self.__class__.__name__}: {r}")
                 await ctx.message.add_reaction("👌")
             except Exception as e:
                 embed = make_embed(ctx.command, color=discord.Colour(15548997))
@@ -58,7 +56,7 @@ class ChatLogs(Observer[ChatEvent]):
         self._channel = await self._dc_client.fetch_channel(self._channel_id)
 
     async def send_chat_log(self, chat_event: ChatEvent):
-        if self._channel is None:
+        if self._channel is None or chat_event is None:
             return
         escaped_user_name = discord.utils.escape_markdown(chat_event.user_name)
         escaped_msg = discord.utils.escape_markdown(chat_event.message)
