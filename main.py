@@ -156,6 +156,8 @@ class MordhauRconSuite:
             self.matchstate_events.subscribe(matchstate_next)
             self.killfeed_events.subscribe(self.killstreaks)
 
+        self.tasks.add(self.db_kills.start())
+
     def set_up_monitoring(self):
         if not self._bot_config.chat_logs_channel:
             return
