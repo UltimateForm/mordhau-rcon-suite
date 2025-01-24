@@ -97,15 +97,15 @@ class TitleCompute(Subject[MigrantComputeEvent]):
             killer_playfab_id = event_data.killer_id
             killed_playfab_id = event_data.killed_id
             if not self.current_rex and killer_playfab_id:
-                empty_tile_msg = self._get_migrancy_text(
-                    VACANCY_MIGRANCY_TEMPLATES, killer, killed
-                )
-                backtask(self._execute_command(f"say {empty_tile_msg}"))
+                # empty_tile_msg = self._get_migrancy_text(
+                #    VACANCY_MIGRANCY_TEMPLATES, killer, killed
+                # )
+                # backtask(self._execute_command(f"say {empty_tile_msg}"))
                 backtask(self._place_rex(killer_playfab_id, killer))
                 self.current_rex = killer_playfab_id
             elif killed_playfab_id and self.current_rex == killed_playfab_id:
-                title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
-                backtask(self._execute_command(f"say {title_msg}"))
+                # title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
+                # (self._execute_command(f"say {title_msg}"))
                 if killer_playfab_id:
                     backtask(self._place_rex(killer_playfab_id, killer))
                 self._remove_rex(killed_playfab_id, killed)
