@@ -70,18 +70,12 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         txt = template.format(killer, killed, self.rex_tile)
         return txt
 
-    def _place_rex(self, playfab_id: str, user_name):
+    async def _place_rex(self, playfab_id: str, user_name):
         target_name = self._sanitize_name(playfab_id, user_name)
-        task = asyncio.create_task(
-            self._execute_command(
-                f"renameplayer {playfab_id} [{self.rex_tile}] {target_name}"
-            ),
-        )
-
-        def callback(_task: asyncio.Task):
-            self.on_next(MigrantComputeEvent("placed", playfab_id, target_name))
-
-        task.add_done_callback(callback)
+        await self._execute_command(
+            f"renameplayer {playfab_id} [{self.rex_tile}] {target_name}"
+        ),
+        self.on_next(MigrantComputeEvent("placed", playfab_id, target_name))
 
     def _process_killfeed_event(self, event_data: KillfeedEvent):
         try:
@@ -94,13 +88,13 @@ class TitleCompute(Subject[MigrantComputeEvent]):
                     VACANCY_MIGRANCY_TEMPLATES, killer, killed
                 )
                 asyncio.create_task(self._execute_command(f"say {empty_tile_msg}"))
-                self._place_rex(killer_playfab_id, killer)
+                asyncio.create_task(self._place_rex(killer_playfab_id, killer))
                 self.current_rex = killer_playfab_id
             elif killed_playfab_id and self.current_rex == killed_playfab_id:
                 title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
                 asyncio.create_task(self._execute_command(f"say {title_msg}"))
                 if killer_playfab_id:
-                    self._place_rex(killer_playfab_id, killer)
+                    asyncio.create_task(self._place_rex(killer_playfab_id, killer))
                 self._remove_rex(killed_playfab_id, killed)
                 self.current_rex = killer_playfab_id
             elif (
