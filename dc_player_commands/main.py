@@ -36,6 +36,7 @@ def register_dc_player_commands(
             kill_score = await get_kills(argument, collection)
             if kill_score is None:
                 raise Exception("Not found")
+            embed.color = 16705372
             embed.add_field(
                 name="Rank",
                 value=(
@@ -127,6 +128,7 @@ def register_dc_player_commands(
             player_score = await get_playtime(argument, collection)
             if player_score is None:
                 raise Exception("Not found")
+            embed.color = 5763719
             embed.add_field(
                 name="Rank", value=rank_2_emoji(player_score.rank), inline=False
             )
@@ -205,6 +207,7 @@ def register_dc_player_commands(
             player2_id = player2_data.get("playfab_id", None)
             player1_kills: dict = player1_data.get("kills", {})
             player2_kills: dict = player2_data.get("kills", {})
+            embed.color = 2303786
             embed.add_field(
                 name=player1_data.get("user_name", "None"),
                 value=player1_kills.get(player2_id, 0),
