@@ -8,7 +8,8 @@ from motor.motor_asyncio import (
 )
 from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
-from rank_compute.kills import get_kills
+from rank_compute.kills import get_kills, get_season_kills
+from config_client.models import SeasonConfig
 import re
 
 
@@ -39,6 +40,19 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.add_field(name="Kills", value=kill_score.kill_count)
             embed.add_field(name="Deaths", value=kill_score.death_count)
             embed.add_field(name="Ratio", value=kill_score.ratio or "-")
+            if len(kill_score.achievements):
+                embed.add_field(name="", value="\n")
+                embed.add_field(
+                    name=":trophy: Achievements :trophy:", value="\n", inline=False
+                )
+                awards = []
+                for k, v in kill_score.achievements.items():
+                    rank = rank_2_emoji(v - 1)
+                    if k == "lifetime_rank":
+                        awards.append(f"**Lifetime** {rank}")
+                    else:
+                        awards.append(f"**{k}** {rank}")
+                embed.add_field(name="", value="〡".join(awards))
         except Exception as e:
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
@@ -46,6 +60,41 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         await ctx.message.reply(embed=embed)
 
     bot.command("kdr")(kdr)
+
+    async def skdr(ctx: Context, argument: str):
+        collection = db["kills"]
+        embed = make_embed(ctx)
+        embed.color = 0xFFFC2E
+        try:
+            exists = await SeasonConfig.aexists()
+            if not exists:
+                raise Exception("No active season")
+            season_cfg = await SeasonConfig.aload()
+            if not season_cfg.is_active:
+                raise Exception("No active season")
+            kill_score = await get_season_kills(argument, collection, season_cfg)
+            if kill_score is None:
+                raise Exception("Not found")
+            embed.add_field(
+                name="Rank", value=rank_2_emoji(kill_score.rank), inline=False
+            )
+            embed.title = season_cfg.embed_config.title
+            embed.description = season_cfg.embed_config.description
+            embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+            embed.color = 15844367
+            embed.add_field(name="PlayfabId", value=kill_score.player_id)
+            embed.add_field(name="Username", value=kill_score.user_name)
+            embed.add_field(name=chr(173), value=chr(173))
+            embed.add_field(name="Kills", value=kill_score.kill_count)
+            embed.add_field(name="Deaths", value=kill_score.death_count)
+            embed.add_field(name="Ratio", value=kill_score.ratio or "-")
+        except Exception as e:
+            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997  # red
+        await ctx.message.reply(embed=embed)
+
+    bot.command("skdr")(skdr)
 
     async def playtime(ctx: Context, argument: str):
         collection = db["playtime"]

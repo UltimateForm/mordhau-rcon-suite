@@ -4,6 +4,7 @@ from config_client.data import pt_config as p_config, bot_config as b_config
 from dotenv import load_dotenv
 from boards.info import InfoBoard
 from boards.kills import KillsScoreboard
+from boards.season import SeasonScoreboard
 from common import logger
 from common.models import LoginEvent, PlayerStore, KillfeedEvent, ChatEvent
 from common.discord import ObservableDiscordClient, common_intents
@@ -22,10 +23,12 @@ from common.parsers import (
     parse_killfeed_event,
     parse_matchstate,
 )
-from config_client.models import BotConfig, PtConfig
+from config_client.models import BotConfig, PtConfig, SeasonConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 from typing import Coroutine
 from monitoring.chat_logs import ChatLogs
+from seasons.dc_config import register_season_cfg_commands
+from seasons.season_controller import SEASON_TOPIC
 
 load_dotenv()
 
@@ -52,6 +55,8 @@ class MordhauRconSuite:
     playtime_scoreboard: PlayTimeScoreboard = None
     info_scoreboard: InfoBoard | None = None
     kills_scoreboard: KillsScoreboard = None
+    season_scoreboard: SeasonScoreboard = None
+    _initial_season_cfg: SeasonConfig | None = None
 
     @property
     def playtime_collection(self):
@@ -68,6 +73,8 @@ class MordhauRconSuite:
     def __init__(self, bot_config: BotConfig, pt_config: PtConfig):
         self._bot_config = bot_config
         self._pt_config = pt_config
+        if SeasonConfig.exists():
+            self._initial_season_cfg = SeasonConfig.load()
         self.set_up_db()
         self.set_up_discord()
         if self._bot_config.experimental_bulk_listener:
@@ -118,6 +125,11 @@ class MordhauRconSuite:
         self.kills_scoreboard = KillsScoreboard(
             self.kills_collection, kills_channel, self._bot_config.kills_refresh_time
         )
+        self.season_scoreboard = SeasonScoreboard(
+            self.kills_collection,
+            self._bot_config.kills_refresh_time,
+            self._initial_season_cfg,
+        )
         if self._bot_config.info_board_enabled():
             self.info_board = InfoBoard(
                 self._bot_config.info_channel, self._bot_config.info_refresh_time
@@ -125,25 +137,39 @@ class MordhauRconSuite:
             self._dc_client.subscribe(self.info_board)
         self._dc_client.subscribe(self.playtime_scoreboard)
         self._dc_client.subscribe(self.kills_scoreboard)
+        self._dc_client.subscribe(self.season_scoreboard)
 
     def set_up_experiences(self):
-        self.player_store = PlayerStore()
         self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
+        self.player_store = PlayerStore()
         self.peristent_titles = PersistentTitles(
             self.login_events,
             self._dc_bot,
             self.playtime_collection,
             self.live_sessions_collection,
         )
+
+        def reset_migrant_title(state: str):
+            if not state:
+                return
+            if state.lower() == "in progress":
+                self.migrant_titles.rex_compute.current_rex = ""
+
+        self.matchstate_events.subscribe(reset_migrant_title)
         self.ingame_commands = IngameCommands(self._pt_config, self._database)
         self.db_kills = DbKills(
-            self.kills_collection, self.killfeed_events, self.player_store
+            self.kills_collection,
+            self.killfeed_events,
+            self.player_store,
+            self._initial_season_cfg,
         )
 
         self.chat_events.subscribe(self.ingame_commands)
         self.login_events.subscribe(self._entrance_desk)
         self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
 
+        register_season_cfg_commands(self._dc_bot, self._bot_config)
+        SEASON_TOPIC.subscribe(lambda x: logger.info(f"Season event {x}"))
         if self._bot_config.ks_enabled:
             self.killstreaks = KillStreaks()
 
@@ -189,9 +215,7 @@ class MordhauRconSuite:
         )
 
     def set_up_bulk_listeners(self):
-        events_to_listen = ["login", "killfeed", "chat"]
-        if self._bot_config.ks_enabled:
-            events_to_listen.append("matchstate")
+        events_to_listen = ["login", "killfeed", "chat", "matchstate"]
         bulk_listener = RconListener(event=events_to_listen)
         self.login_events = bulk_listener.pipe(
             operators.filter(lambda x: x.startswith("Login")),
@@ -205,13 +229,9 @@ class MordhauRconSuite:
             operators.filter(lambda x: x.startswith("Chat")),
             operators.map(parse_chat_event),
         )
-        self.matchstate_events = (
-            bulk_listener.pipe(
-                operators.filter(lambda x: x.startswith("MatchState")),
-                operators.map(parse_matchstate),
-            )
-            if self._bot_config.ks_enabled
-            else empty()
+        self.matchstate_events = bulk_listener.pipe(
+            operators.filter(lambda x: x.startswith("MatchState")),
+            operators.map(parse_matchstate),
         )
         self.tasks.add(bulk_listener.start())
 
@@ -219,6 +239,7 @@ class MordhauRconSuite:
         chat_listener = RconListener("chat")
         killfeed_listener = RconListener("killfeed")
         login_listener = RconListener("login")
+        matchstate_listener = RconListener("matchstate")
         self.login_events = login_listener.pipe(
             operators.map(parse_login_event),
         )
@@ -228,17 +249,15 @@ class MordhauRconSuite:
         self.chat_events = chat_listener.pipe(
             operators.map(parse_chat_event),
         )
-        if self._bot_config.ks_enabled:
-            matchstate_listener = RconListener("matchstate")
-            self.matchstate_events = matchstate_listener.pipe(
-                operators.map(parse_matchstate)
-            )
-            self.tasks.add(matchstate_listener.start())
+        self.matchstate_events = matchstate_listener.pipe(
+            operators.map(parse_matchstate)
+        )
         self.tasks.update(
             [
                 chat_listener.start(),
                 killfeed_listener.start(),
                 login_listener.start(),
+                matchstate_listener.start(),
             ]
         )
 

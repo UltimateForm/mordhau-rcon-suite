@@ -9,6 +9,7 @@ from common.models import (
     Player,
     ServerInfo,
 )
+from config_client.models import SeasonConfig
 
 GROK_KILLFEED_EVENT = r"%{WORD:event_type}: %{NOTSPACE:date}: (?:%{NOTSPACE:killer_id})? \(%{GREEDYDATA:user_name}\) killed (?:%{NOTSPACE:killed_id})? \(%{GREEDYDATA:killed_user_name}\)"
 GROK_LOGIN_EVENT = r"%{WORD:event_type}: %{NOTSPACE:date}: %{GREEDYDATA:user_name} \(%{WORD:player_id}\) logged %{WORD:instance}"
@@ -83,21 +84,27 @@ def parse_matchstate(raw: str) -> str | None:
     return parsed.get("state", None)
 
 
-def transform_kill_record_to_db(record: KillRecord) -> tuple[list[dict], dict]:
+def transform_kill_record_to_db(
+    record: KillRecord, season: SeasonConfig | None = None
+) -> tuple[list[dict], dict]:
     update = {
         "$set": {"playfab_id": record.player_id, "user_name": record.user_name},
         "$inc": {},
     }
+
     death_updates = []
 
     total = 0
     for id, count in record.kills.items():
         update["$inc"][f"kills.{id}"] = count
-        death_updates.append(
-            {"$set": {"playfab_id": id}, "$inc": {"death_count": count}}
-        )
+        death_update = {"$set": {"playfab_id": id}, "$inc": {"death_count": count}}
+        death_updates.append(death_update)
+        if season and season.is_active:
+            death_update["$inc"][f"season.{season.name}.death_count"] = count
         total += count
     update["$inc"]["kill_count"] = total
+    if season and season.is_active:
+        update["$inc"][f"season.{season.name}.kill_count"] = total
     return (death_updates, update)
 
 

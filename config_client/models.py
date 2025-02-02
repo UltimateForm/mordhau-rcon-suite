@@ -1,30 +1,73 @@
 from dataclasses import dataclass, field, fields
 import json
 import os
+import aiofiles
 from dacite import from_dict
 from typing import Optional
+from datetime import date
 
 
 @dataclass
 class IOBoundDataclass:
+    @classmethod
+    def delete(cls):
+        os.remove(cls.get_path())
+
+    @classmethod
+    async def adelete(cls):
+        await aiofiles.os.remove(cls.get_path())
+
+    @classmethod
+    def exists(cls):
+        return os.path.exists(cls.get_path())
+
+    @classmethod
+    async def aexists(cls):
+        exists = await aiofiles.os.path.exists(cls.get_path())
+        return exists
+
+    def as_dict(self):
+        return self.__dict__
+
     def save(self):
         with open(self.get_path(), "w", encoding="utf8") as config_file:
-            json.dump(self.__dict__, config_file, indent=2)
+            json.dump(self.as_dict(), config_file, indent=2)
+
+    async def asave(self):
+        async with aiofiles.open(self.get_path(), "w", encoding="utf8") as config_file:
+            await config_file.write(json.dumps(self.as_dict(), indent=2))
 
     @classmethod
     def _load(cls):
-        path = cls.get_path()
-        if not os.path.exists(path):
+        if not cls.exists():
             return cls()
         json_data: dict = None
+        path = cls.get_path()
         with open(path, "r", encoding="utf8") as config_file:
             json_data = json.loads(config_file.read())
         config_data = from_dict(data_class=cls, data=json_data)
         return config_data
 
     @classmethod
+    async def _aload(cls):
+        exists = await cls.aexists()
+        if not exists:
+            return cls()
+        path = cls.get_path()
+        json_data: dict = None
+        async with aiofiles.open(path, "r", encoding="utf8") as config_file:
+            content = await config_file.read()
+            json_data = json.loads(content)
+        config_data = from_dict(data_class=cls, data=json_data)
+        return config_data
+
+    @classmethod
     def load(cls):
         return cls._load()
+
+    @classmethod
+    def aload(cls):
+        return cls._aload()
 
     @classmethod
     def get_path(cls) -> str:
@@ -43,6 +86,7 @@ class BotConfig(IOBoundDataclass):
     info_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
     chat_logs_channel: Optional[int] = None
+    boards_min_to_format: Optional[int] = 100000
     config_bot_channel: int = 0
     rcon_password: str = ""
     rcon_address: str = "0.0.0.0"
@@ -65,7 +109,7 @@ class BotConfig(IOBoundDataclass):
 
     @classmethod
     def _load_from_env(cls):
-        map: dict[str, str | int] = {}
+        field_map: dict[str, str | int] = {}
         for field_item in fields(BotConfig):
             env_key = field_item.name.upper()
             field_type = field_item.type
@@ -85,11 +129,11 @@ class BotConfig(IOBoundDataclass):
                 value = int(value) if value.isnumeric() else 0
             if field_type is bool or field_type is Optional[bool]:
                 value = bool(value)
-            map[field_item.name] = value
-        if len(map) == 0:
+            field_map[field_item.name] = value
+        if len(field_map) == 0:
             return None
         else:
-            return BotConfig(**map)
+            return BotConfig(**field_map)
 
     @classmethod
     def load(cls):
@@ -130,6 +174,42 @@ class KsConfig(IOBoundDataclass):
         return "./persist/ks.config.json"
 
 
+@dataclass
+class EmbedConfig:
+    title: str = ""
+    description: str = ""
+    image_url: str = ""
+    footer_txt: str = ""
+
+
+@dataclass
+class SeasonConfig(IOBoundDataclass):
+    start_date: Optional[str] = field(init=False, default=None)
+    end_date: Optional[str] = field(init=False, default=None)
+    channel: Optional[int] = field(init=False, default=0)
+    embed_config: EmbedConfig = field(init=False, default_factory=EmbedConfig)
+    name: str = "Season Name"
+    exclude: list[str] = field(default_factory=list)
+    type: str = "kdr"
+    created_date: str = field(init=False)
+
+    @property
+    def is_active(self):
+        return bool(self.start_date and not self.end_date)
+
+    def __post_init__(self):
+        self.created_date = date.today().strftime("%d/%m/%Y")
+
+    @classmethod
+    def get_path(cls):
+        return "./persist/season.config.json"
+
+    def as_dict(self):
+        self_dict = self.__dict__.copy()
+        self_dict["embed_config"] = self.embed_config.__dict__
+        return self_dict
+
+
 if __name__ == "__main__":
-    bcfg = BotConfig.load()
-    print(bcfg)
+    season_config = SeasonConfig()
+    print(season_config)

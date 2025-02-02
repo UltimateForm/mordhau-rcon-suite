@@ -75,6 +75,7 @@ class KillScore(Player):
     death_count: int
     rank: int
     kills: dict[str, int] = field(default_factory=dict)
+    achievements: dict[str, int] = field(default_factory=dict)
     ratio: int | None = field(init=False)
 
     def __post_init__(self):
