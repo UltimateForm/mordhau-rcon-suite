@@ -36,6 +36,8 @@ COPY ./dc_player_commands/* ./dc_player_commands
 
 COPY ./killstreaks/* ./killstreaks
 
+COPY ./season/* ./season
+
 COPY ./main.py ./
 
 

@@ -1,5 +1,6 @@
 import numpy as np
 from itertools import takewhile
+import math
 
 
 def compute_gate(value: int, gates: list[int]) -> int:
@@ -79,3 +80,11 @@ def slice_text_array_at_total_length(max: int, texts: list[str]) -> list[list[st
         cursor += len(chunk)
         new_list.append(chunk)
     return new_list
+
+
+def human_format(number: int):
+    units = ["", "K", "M", "G", "T", "P"]
+    k = 1000.0
+    magnitude = int(math.floor(math.log(number, k)))
+    value = str(round(number / k**magnitude, 1)).removesuffix(r".0")
+    return value + units[magnitude]

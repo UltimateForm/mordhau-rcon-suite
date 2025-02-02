@@ -30,11 +30,14 @@ class Board(Observer[discord.Client], ABC):
     def on_next(self, client: discord.Client):
         asyncio.create_task(self.start(client))
 
+    async def load_channel(self, client: discord.Client):
+        self._channel = await client.fetch_channel(self._channel_id)
+
     async def start(self, client: discord.Client):
         logger.info(
             f"{self.__class__.__name__}: Retrieving discord channel {self._channel_id}"
         )
-        self._channel = await client.fetch_channel(self._channel_id)
+        await self.load_channel(client)
         await self.delete_previous_message()
         self.job.cancel()
         self.job.start()
@@ -42,6 +45,12 @@ class Board(Observer[discord.Client], ABC):
     async def write_msg_id(self):
         async with aiofiles.open(self.file_path, "w") as file:
             await file.write(str(self._current_message.id))
+
+    async def destroy_msg_id(self):
+        file_exists = await aos.path.exists(self.file_path)
+        if not file_exists:
+            return
+        await aiofiles.os.remove(self.file_path)
 
     async def delete_previous_message(self) -> str | None:
         try:
@@ -56,6 +65,7 @@ class Board(Observer[discord.Client], ABC):
             parsed_msg_id = int(msg_id)
             msg = await self._channel.fetch_message(parsed_msg_id)
             await msg.delete()
+            await aiofiles.os.remove(self.file_path)
         except Exception as e:
             logger.error(
                 f"{self.__class__.__name__}: Error deleting existing board: {e}"

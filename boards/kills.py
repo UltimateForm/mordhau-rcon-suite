@@ -7,8 +7,9 @@ from motor.motor_asyncio import (
 from table2ascii import table2ascii as t2a
 from boards.base import Board
 from config_client.data import bot_config
-from common.compute import compute_time_txt
+from common.compute import compute_time_txt, human_format
 from common.discord import make_embed
+from rank_compute.kills import update_achieved_ranks
 
 BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
@@ -31,11 +32,34 @@ class KillsScoreboard(Board):
             "playfab_id", "<UNKNOWN>"
         )
         kill_count = record.get("kill_count", 0)
+
         death_count = record.get("death_count", 0)
+
         ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
+        kill_count_txt = (
+            human_format(kill_count)
+            if kill_count >= bot_config.boards_min_to_format
+            else kill_count
+        )
+        death_count_txt = (
+            human_format(death_count)
+            if death_count >= bot_config.boards_min_to_format
+            else death_count
+        )
         if len(user_name) > 26:
             user_name = user_name[:24] + ".."
-        return [user_name, kill_count, death_count, ratio]
+        return [user_name, kill_count_txt, death_count_txt, ratio]
+
+    async def update_achieved_ranks(self, records: dict):
+        inf = float("inf")
+        await update_achieved_ranks(
+            [
+                {"playfab_id": item["playfab_id"], "rank": index + 1}
+                for (index, item) in enumerate(records)
+                if item.get("achiev", {}).get("lifetime_rank", inf) < index + 1
+            ],
+            self._kills_collection,
+        )
 
     async def send_board(self):
         top_20_items: list[dict] = (
@@ -44,6 +68,7 @@ class KillsScoreboard(Board):
             .limit(20)
             .to_list()
         )
+        asyncio.create_task(self.update_achieved_ranks(top_20_items))
         ascii_table = (
             "```"
             + t2a(

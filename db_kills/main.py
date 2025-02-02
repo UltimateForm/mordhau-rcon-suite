@@ -6,6 +6,8 @@ from motor.motor_asyncio import (
 from pymongo import UpdateOne
 from common.models import KillRecord, PlayerStore, KillfeedEvent
 from common import logger, parsers
+from seasons.season_controller import SEASON_TOPIC, SeasonEvent
+from config_client.models import SeasonConfig
 
 
 class DbKills:
@@ -13,21 +15,31 @@ class DbKills:
     _pending_records: list[KillRecord] | None = None
     _bot_index = 0
     _player_store: PlayerStore | None = None
+    _season: SeasonConfig | None = None
 
     def __init__(
         self,
         db_collection: AsyncIOMotorCollection,
         killfeed_observable: Observable[KillfeedEvent],
         player_store: PlayerStore,
+        season: SeasonConfig | None,
     ):
         self._pending_records = []
         self._collection = db_collection
         self._player_store = player_store
+        self._season = season
+        SEASON_TOPIC.subscribe(lambda x: asyncio.create_task(self.load_season(x)))
 
         def _launch_kill_feed_task(event: KillfeedEvent):
             asyncio.create_task(self._process_killfeed(event))
 
         killfeed_observable.subscribe(_launch_kill_feed_task)
+
+    async def load_season(self, event: SeasonEvent):
+        if event is SeasonEvent.DESTROY:
+            self._season = None
+        else:
+            self._season = await SeasonConfig.aload()
 
     async def _start_process(self):
         while True:
@@ -36,7 +48,9 @@ class DbKills:
             self._pending_records = []
             tasks = []
             for record in records:
-                (death_updates, mutation) = parsers.transform_kill_record_to_db(record)
+                (death_updates, mutation) = parsers.transform_kill_record_to_db(
+                    record, self._season
+                )
                 tasks.append(
                     UpdateOne({"playfab_id": record.player_id}, mutation, upsert=True)
                 )
