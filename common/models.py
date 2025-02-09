@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from common.compute import compute_time_txt
-from rcon.rcon_listener import RconListener
 
 
 @dataclass
@@ -84,12 +83,3 @@ class KillScore(Player):
             if self.death_count > 0
             else None
         )
-
-
-@dataclass
-class RconListenerCollection:
-    chat: RconListener
-    killfeed: RconListener
-    matchstate: RconListener
-    login: RconListener
-    bulk: RconListener
