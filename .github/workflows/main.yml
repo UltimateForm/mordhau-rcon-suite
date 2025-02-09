@@ -8,12 +8,13 @@ jobs:
     container:
       image: python:3.11.3
     steps:
+      - uses: actions/checkout@v4
       - name: install pipenv
         run: pip install pipenv
       - name: install packages
         run: pipenv install
       - name: run tests
-        run: ls -la
+        run: pipenv run test
 
   build:
     runs-on: ubuntu-latest
