@@ -4,7 +4,7 @@ WORKDIR /bot
 
 COPY ./Pipfile .
 
-COPY ./.env .
+COPY ./.env* .
      
 RUN pip install pipenv
 
