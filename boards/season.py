@@ -32,7 +32,7 @@ class SeasonScoreboard(Board):
     def __init__(
         self,
         kills_collection: AsyncIOMotorCollection,
-        time_interval=60,
+        time_interval: int | None = 60,
         initial_season: SeasonConfig | None = None,
     ):
         self._season_cfg = initial_season

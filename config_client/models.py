@@ -2,6 +2,7 @@ from dataclasses import dataclass, field, fields
 import json
 import os
 import aiofiles
+from aiofiles import os as aos
 from dacite import from_dict
 from typing import Optional
 from datetime import date
@@ -15,7 +16,7 @@ class IOBoundDataclass:
 
     @classmethod
     async def adelete(cls):
-        await aiofiles.os.remove(cls.get_path())
+        await aos.remove(cls.get_path())
 
     @classmethod
     def exists(cls):
@@ -23,7 +24,7 @@ class IOBoundDataclass:
 
     @classmethod
     async def aexists(cls):
-        exists = await aiofiles.os.path.exists(cls.get_path())
+        exists = await aos.path.exists(cls.get_path())
         return exists
 
     def as_dict(self):
@@ -81,9 +82,11 @@ class BotConfig(IOBoundDataclass):
     embed_footer_icon: Optional[str] = None
     kills_channel: Optional[int] = None
     playtime_channel: Optional[int] = None
+    season_channel: Optional[int] = None
     playtime_refresh_time: Optional[int] = None
     kills_refresh_time: Optional[int] = None
     info_refresh_time: Optional[int] = None
+    season_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
     chat_logs_channel: Optional[int] = None
     boards_min_to_format: Optional[int] = 100000

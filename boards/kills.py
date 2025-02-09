@@ -22,7 +22,10 @@ class KillsScoreboard(Board):
         return "./persist/kills_msg_id"
 
     def __init__(
-        self, kills_collection: AsyncIOMotorCollection, channel_id, time_interval=60
+        self,
+        kills_collection: AsyncIOMotorCollection,
+        channel_id,
+        time_interval: int | None = 60,
     ):
         self._kills_collection = kills_collection
         super().__init__(channel_id, time_interval)

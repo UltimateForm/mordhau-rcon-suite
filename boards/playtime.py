@@ -19,7 +19,10 @@ class PlayTimeScoreboard(Board):
         return "./persist/playtime_msg_id"
 
     def __init__(
-        self, playtime_collection: AsyncIOMotorCollection, channel_id, time_interval=60
+        self,
+        playtime_collection: AsyncIOMotorCollection,
+        channel_id,
+        time_interval: int | None = 60,
     ):
         self._playtime_collection = playtime_collection
         super().__init__(channel_id, time_interval)

@@ -41,21 +41,21 @@ class MordhauRconSuite:
     killfeed_events: Observable[KillfeedEvent] = empty()
     chat_events: Observable[ChatEvent] = empty()
     matchstate_events: Observable[str] = empty()
-    _bot_config: BotConfig = None
-    _pt_config: PtConfig = None
-    _dc_bot: Bot = None
-    _dc_client: ObservableDiscordClient = None
-    _database: AsyncIOMotorDatabase = None
-    migrant_titles: MigrantTitles = None
-    peristent_titles: PersistentTitles = None
-    ingame_commands: IngameCommands = None
-    player_store: PlayerStore = None
-    db_kills: DbKills = None
+    _bot_config: BotConfig
+    _pt_config: PtConfig
+    _dc_bot: Bot
+    _dc_client: ObservableDiscordClient
+    _database: AsyncIOMotorDatabase
+    migrant_titles: MigrantTitles
+    peristent_titles: PersistentTitles
+    ingame_commands: IngameCommands
+    player_store: PlayerStore
+    db_kills: DbKills
     killstreaks: KillStreaks | None = None
-    playtime_scoreboard: PlayTimeScoreboard = None
+    playtime_scoreboard: PlayTimeScoreboard
     info_scoreboard: InfoBoard | None = None
-    kills_scoreboard: KillsScoreboard = None
-    season_scoreboard: SeasonScoreboard = None
+    kills_scoreboard: KillsScoreboard
+    season_scoreboard: SeasonScoreboard
     _initial_season_cfg: SeasonConfig | None = None
 
     @property
@@ -140,8 +140,8 @@ class MordhauRconSuite:
         self._dc_client.subscribe(self.season_scoreboard)
 
     def set_up_experiences(self):
-        self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
         self.player_store = PlayerStore()
+        self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
         self.peristent_titles = PersistentTitles(
             self.login_events,
             self._dc_bot,
@@ -262,7 +262,14 @@ class MordhauRconSuite:
         )
 
     async def start(self):
-        await asyncio.gather(*self.tasks)
+        try:
+            await asyncio.gather(*self.tasks)
+        finally:
+            await self.close_db()
+
+    async def close_db(self):
+        if self._database is not None:
+            self._database.client.close()
 
 
 if __name__ == "__main__":

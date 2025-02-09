@@ -20,7 +20,7 @@ class Board(Observer[discord.Client], ABC):
     def file_path(self) -> str:
         pass
 
-    def __init__(self, channel_id: int, time_interval: int = 60):
+    def __init__(self, channel_id: int, time_interval: int | None = 60):
         self._channel_id = channel_id
         self._time_interval = time_interval
         self._time_interval_mins = time_interval / 60
