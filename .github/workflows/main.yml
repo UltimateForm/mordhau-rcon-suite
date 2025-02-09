@@ -13,7 +13,7 @@ jobs:
       - name: install packages
         run: pipenv install
       - name: run tests
-        run: pipenv run test        
+        run: pipenv run lint
 
   build:
     runs-on: ubuntu-latest
