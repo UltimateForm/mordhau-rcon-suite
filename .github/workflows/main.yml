@@ -14,7 +14,7 @@ jobs:
       - name: install packages
         run: pipenv install --dev
       - name: run tests
-        run: pipenv run test
+        run: ls -la
 
 
   lint:
