@@ -24,6 +24,7 @@ pyright = "*"
 
 [scripts]
 lint = "flake8"
+typecheck = "pyright"
 test = "pytest"
 
 [requires]
