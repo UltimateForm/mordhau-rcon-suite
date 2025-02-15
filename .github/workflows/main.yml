@@ -1,4 +1,4 @@
-name: Main jobs
+name: main
 
 on: [push]
 
@@ -15,6 +15,22 @@ jobs:
         run: pipenv install --dev
       - name: run tests
         run: pipenv run test
+
+
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: python:3.11.3
+    steps:
+      - uses: actions/checkout@v4
+      - name: install pipenv
+        run: pip install pipenv
+      - name: install packages
+        run: pipenv install --dev
+      - name: run lint
+        run: pipenv run lint
+      - name: run typecheck
+        run: pipenv run typecheck
 
   build:
     runs-on: ubuntu-latest
