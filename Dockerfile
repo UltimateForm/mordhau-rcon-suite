@@ -4,7 +4,7 @@ WORKDIR /bot
 
 COPY ./Pipfile .
 
-COPY ./.env .
+COPY ./.env* .
      
 RUN pip install pipenv
 
@@ -35,6 +35,8 @@ ADD ./monitoring/* ./monitoring
 COPY ./dc_player_commands/* ./dc_player_commands 
 
 COPY ./killstreaks/* ./killstreaks
+
+COPY ./seasons/* ./seasons
 
 COPY ./main.py ./
 

@@ -17,6 +17,10 @@ class InfoBoard(Board):
 
     async def send_board(self):
         try:
+            if not self._channel:
+                raise ValueError(
+                    "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+                )
             server_info_raw: str = ""
             player_list_raw: str = ""
             async with asyncio.timeout(30):
@@ -24,6 +28,8 @@ class InfoBoard(Board):
                     server_info_raw = await client.execute("info")
                     player_list_raw = await client.execute("playerlist")
             server_info = parsers.parse_server_info(server_info_raw)
+            if not server_info:
+                raise ValueError(f"Failed to parse server info: {server_info_raw}")
             players = parsers.parse_playerlist(player_list_raw)
             players_text = "" if len(players) > 0 else "No players online"
             for player in takewhile(lambda x: len(players_text) < 976, players):

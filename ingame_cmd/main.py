@@ -11,10 +11,10 @@ from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
 
 
-class IngameCommands(Observer[ChatEvent]):
+class IngameCommands(Observer[ChatEvent | None]):
     _config: PtConfig
-    _playtime_collection: AsyncIOMotorCollection | None = None
-    _kills_collection: AsyncIOMotorCollection | None = None
+    _playtime_collection: AsyncIOMotorCollection
+    _kills_collection: AsyncIOMotorCollection
 
     def __init__(self, config: PtConfig, db: AsyncIOMotorDatabase) -> None:
         self._playtime_collection = db["playtime"]
@@ -48,7 +48,7 @@ class IngameCommands(Observer[ChatEvent]):
             (next_rank_minutes, next_rank_txt) = compute_next_gate_text(
                 user_playtime.minutes, self._config.playtime_tags
             )
-            if next_rank_txt is not None:
+            if next_rank_txt is not None and next_rank_minutes is not None:
                 full_msg += (
                     f"; Next: {next_rank_txt} at {compute_time_txt(next_rank_minutes)}"
                 )
@@ -80,7 +80,7 @@ class IngameCommands(Observer[ChatEvent]):
         async with RconContext() as client:
             await client.execute(f"say {full_msg}")
 
-    def on_next(self, event_data: ChatEvent) -> None:
+    def on_next(self, event_data: ChatEvent | None) -> None:
         if not event_data:
             return
         message = event_data.message.rstrip()

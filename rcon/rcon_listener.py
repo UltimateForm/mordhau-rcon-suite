@@ -45,8 +45,10 @@ class RconListener(Subject[str], RconClient):
                 events_to_listen: list[str] = []
                 if type(self._event) is str:
                     events_to_listen.append(self._event)
-                else:
+                elif type(self._event) is list:
                     events_to_listen = self._event
+                else:
+                    logger.error(f"RconListener: Invalid event type {type(self._event)}")
                 for event in events_to_listen:
                     r = await self.execute(f"listen {event}")
                     logger.info(f"{self._event} listener: {r}")

@@ -1,12 +1,8 @@
 from datetime import datetime, timedelta
-import asyncio
-import dotenv
-from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorClient
+from motor.motor_asyncio import AsyncIOMotorCollection
 from reactivex import Subject
 import pymongo
 from persistent_titles.data import SessionEvent
-from common import logger, parsers
-from config_client.data import bot_config
 
 
 class SessionTopic(Subject[SessionEvent]):
@@ -43,44 +39,3 @@ class SessionTopic(Subject[SessionEvent]):
             SessionEvent(original_username, playfab_id, session_minutes_rounded)
         )
         return session_minutes_rounded
-
-
-async def main():
-    login_event = {
-        "eventType": "Login",
-        "date": "2024.06.21-23.05.13",
-        "userName": "userName",
-        "playfabId": "playfabId",
-        "order": "out",
-    }
-    logout_event = {
-        "eventType": "Login",
-        "date": "2024.06.21-23.26.34",
-        "userName": "userName",
-        "playfabId": "playfabId",
-        "order": "out",
-    }
-    logger.use_date_time_logger()
-    dotenv.load_dotenv()
-
-    db_connection = bot_config.db_connection_string
-    db_name = bot_config.db_name
-    db_client = AsyncIOMotorClient(db_connection)
-    database = db_client[db_name]
-    collection = database["live_sessions"]
-    log_book = SessionTopic(collection)
-    log_book.subscribe(lambda x: logger.debug(f"Session event: {x}"))
-    session_id = await log_book.login(
-        login_event["playfabId"],
-        login_event["userName"],
-        parsers.parse_date(login_event["date"]),
-    )
-    logger.debug(f"session id {session_id}")
-    await asyncio.sleep(5)
-    await log_book.logout(
-        logout_event["playfabId"], parsers.parse_date(logout_event["date"])
-    )
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

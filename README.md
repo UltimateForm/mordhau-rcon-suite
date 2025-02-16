@@ -5,6 +5,8 @@ This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which
   - and broadcasting killstreaks
 - sending scoreboards to discord
   - kills
+    - including seasonal leaderboards
+    - including achievements
   - playtime
   - checking individual player playtime, killscore, and lifetime match score against another player
 - player list/server info

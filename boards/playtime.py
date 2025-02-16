@@ -12,19 +12,26 @@ from common.discord import make_embed
 
 
 class PlayTimeScoreboard(Board):
-    _playtime_collection: AsyncIOMotorCollection | None
+    _playtime_collection: AsyncIOMotorCollection
 
     @property
     def file_path(self) -> str:
         return "./persist/playtime_msg_id"
 
     def __init__(
-        self, playtime_collection: AsyncIOMotorCollection, channel_id, time_interval=60
+        self,
+        playtime_collection: AsyncIOMotorCollection,
+        channel_id,
+        time_interval: int | None = 60,
     ):
         self._playtime_collection = playtime_collection
         super().__init__(channel_id, time_interval)
 
     async def send_board(self):
+        if not self._channel:
+            raise ValueError(
+                "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+            )
         top_20_items: list[dict] = (
             await self._playtime_collection.find()
             .sort("minutes", -1)

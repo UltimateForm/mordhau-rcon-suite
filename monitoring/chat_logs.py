@@ -9,11 +9,11 @@ from rcon.rcon import RconContext
 from common import logger
 
 
-class ChatLogs(Observer[ChatEvent]):
-    _dc_client: discord.Client = None
-    _channel: discord.TextChannel | None = None
+class ChatLogs(Observer[ChatEvent | None]):
+    _dc_client: discord.Client
+    _channel: discord.abc.Messageable | None = None
     _channel_id: int = 0
-    _allowed_mentions: discord.AllowedMentions = None
+    _allowed_mentions: discord.AllowedMentions
 
     def __init__(
         self,
@@ -21,9 +21,10 @@ class ChatLogs(Observer[ChatEvent]):
         channel_id: int,
         dc_bot: Bot,
     ):
-        observable_dc_client.subscribe(
-            lambda x: asyncio.create_task(self._on_discord_ready(x))
-        )
+        def launch_discord_ready(x: discord.Client):
+            asyncio.create_task(self._on_discord_ready(x))
+
+        observable_dc_client.subscribe(launch_discord_ready)
         self._channel_id = channel_id
         self._allowed_mentions = discord.AllowedMentions(roles=True)
         self.create_say_command(dc_bot)
@@ -42,7 +43,7 @@ class ChatLogs(Observer[ChatEvent]):
                     logger.info(f"{self.__class__.__name__}: {r}")
                 await ctx.message.add_reaction("👌")
             except Exception as e:
-                embed = make_embed(ctx.command, color=discord.Colour(15548997))
+                embed = make_embed(str(ctx.command), color=discord.Colour(15548997))
                 embed.add_field(name="Success", value=False, inline=False)
                 embed.add_field(name="Error", value=str(e), inline=False)
                 await ctx.message.reply(embed=embed)
@@ -53,7 +54,9 @@ class ChatLogs(Observer[ChatEvent]):
 
     async def _on_discord_ready(self, dc_client: discord.Client):
         self._dc_client = dc_client
-        self._channel = await self._dc_client.fetch_channel(self._channel_id)
+        channel = await self._dc_client.fetch_channel(self._channel_id)
+        if isinstance(channel, discord.abc.Messageable):
+            self._channel = channel
 
     async def send_chat_log(self, chat_event: ChatEvent):
         if self._channel is None or chat_event is None:

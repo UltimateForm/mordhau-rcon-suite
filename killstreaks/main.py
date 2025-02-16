@@ -17,11 +17,11 @@ def get_template(streak: int, source: dict[str, str | list[str]]) -> str | None:
     if type(target) is list:
         return random.choice(target)
     else:
-        return target
+        return target  # type: ignore
 
 
-class KillStreaks(Observer[KillfeedEvent]):
-    tally = dict[str, int]
+class KillStreaks(Observer[KillfeedEvent | None]):
+    tally: dict[str, int]
     _first_blood_claimed = False
     _config: KsConfig
 
@@ -54,13 +54,17 @@ class KillStreaks(Observer[KillfeedEvent]):
         if current_streak < 5:
             return
         streak_gates = [int(key) for key in self._config.end.keys() if key.isnumeric()]
-        template: str = self._config.end.get("*", None)
+        template: str | None | list[str] = self._config.end.get("*", None)
         if len(streak_gates) > 0:
             gate = compute_gate(current_streak, streak_gates)
-            template = get_template(gate, self._config.end)
+            template = (
+                get_template(gate, self._config.end) if gate is not None else None
+            )
         if not template:
             return
-        msg = template.format(killer_name, current_streak, user_name)
+        if type(template) is list:
+            template = random.choice(template)
+        msg = template.format(killer_name, current_streak, user_name)  # type: ignore
         async with asyncio.timeout(10):
             async with RconContext() as client:
                 await client.execute(f"say {msg}")
@@ -92,7 +96,7 @@ class KillStreaks(Observer[KillfeedEvent]):
             async with RconContext() as client:
                 await client.execute(f"say {msg}")
 
-    def on_next(self, kill_event: KillfeedEvent):
+    def on_next(self, kill_event: KillfeedEvent | None):
         if kill_event is None or not kill_event.killed_id or not kill_event.killer_id:
             return
         asyncio.create_task(

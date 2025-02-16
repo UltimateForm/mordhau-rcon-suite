@@ -20,9 +20,12 @@ flake8 = "*"
 flake8-async = "*"
 pytest = "*"
 faker = "*"
+pyright = "*"
 
 [scripts]
 lint = "flake8"
+typecheck = "pyright"
+test = "pytest"
 
 [requires]
 python_version = "3.11.3"

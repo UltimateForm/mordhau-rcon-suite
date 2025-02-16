@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from common.compute import compute_time_txt
-from rcon.rcon_listener import RconListener
 
 
 @dataclass
@@ -75,7 +74,8 @@ class KillScore(Player):
     death_count: int
     rank: int
     kills: dict[str, int] = field(default_factory=dict)
-    ratio: int | None = field(init=False)
+    achievements: dict[str, int] = field(default_factory=dict)
+    ratio: float | None = field(init=False)
 
     def __post_init__(self):
         self.ratio = (
@@ -83,12 +83,3 @@ class KillScore(Player):
             if self.death_count > 0
             else None
         )
-
-
-@dataclass
-class RconListenerCollection:
-    chat: RconListener
-    killfeed: RconListener
-    matchstate: RconListener
-    login: RconListener
-    bulk: RconListener

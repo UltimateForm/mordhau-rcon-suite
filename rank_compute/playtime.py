@@ -15,7 +15,7 @@ async def get_playtime(
         query = {"playfab_id": argument}
     else:
         query = {"user_name": re.compile(f".*{argument}.*", re.IGNORECASE)}
-    playtime_rec: dict = await collection.find_one(query)
+    playtime_rec = await collection.find_one(query)
     if playtime_rec is None:
         return None
     user_name = playtime_rec.get("user_name", "<Unknown>")
