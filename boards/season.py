@@ -1,4 +1,5 @@
 import asyncio
+from xmlrpc.client import Boolean
 import discord
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
@@ -17,7 +18,7 @@ BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
 
 class SeasonScoreboard(Board):
-    _kills_collection: AsyncIOMotorCollection | None
+    _kills_collection: AsyncIOMotorCollection
     _season_cfg: SeasonConfig | None = None
     _discord_client: discord.Client | None = None
 
@@ -27,7 +28,11 @@ class SeasonScoreboard(Board):
 
     @property
     def active(self) -> bool:
-        return self._season_cfg and self._season_cfg.is_active
+        return Boolean(self._season_cfg) and self._season_cfg.is_active
+
+    @property
+    def season_name(self) -> str:
+        return self._season_cfg.name if self._season_cfg else ""
 
     def __init__(
         self,
@@ -37,7 +42,11 @@ class SeasonScoreboard(Board):
     ):
         self._season_cfg = initial_season
         self._kills_collection = kills_collection
-        SEASON_TOPIC.subscribe(lambda x: asyncio.create_task(self.season_next(x)))
+
+        def launch_season_next(event: SeasonEvent):
+            asyncio.create_task(self.season_next(event))
+
+        SEASON_TOPIC.subscribe(launch_season_next)
         super().__init__(
             initial_season.channel if initial_season and initial_season.channel else 0,
             time_interval,
@@ -48,7 +57,9 @@ class SeasonScoreboard(Board):
         asyncio.create_task(self.start(client))
 
     async def load_channel(self, client: discord.Client):
-        self._channel = await client.fetch_channel(self._channel_id)
+        channel = await client.fetch_channel(self._channel_id)
+        if isinstance(channel, discord.abc.Messageable):
+            self._channel = channel
 
     async def start(self, client: discord.Client):
         if not self.active:
@@ -84,7 +95,7 @@ class SeasonScoreboard(Board):
         user_name = record.get("user_name", None) or record.get(
             "playfab_id", "<UNKNOWN>"
         )
-        season_dict = record.get("season", {}).get(self._season_cfg.name, {})
+        season_dict = record.get("season", {}).get(self.season_name, {})
         kill_count = season_dict.get("kill_count", 0)
         death_count = season_dict.get("death_count", 0)
         ratio = str(round(kill_count / death_count, 2)) if death_count > 0 else "-"
@@ -92,7 +103,7 @@ class SeasonScoreboard(Board):
             user_name = user_name[:24] + ".."
         return [user_name, kill_count, death_count, ratio]
 
-    async def update_achieved_ranks(self, records: dict):
+    async def update_achieved_ranks(self, records: list[dict]):
         if not self._season_cfg:
             # just in case....
             return
@@ -108,6 +119,10 @@ class SeasonScoreboard(Board):
         )
 
     async def send_board(self):
+        if not self._channel:
+            raise ValueError(
+                "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+            )
         if not self._season_cfg or not self._season_cfg.is_active:
             return
         top_20_items: list[dict] = (
@@ -129,11 +144,16 @@ class SeasonScoreboard(Board):
             + "```"
         )
         embed = make_season_embed(self._season_cfg)
-        embed.description = embed.description + "\n" + ascii_table
+        embed.description = (
+            embed.description + "\n" + ascii_table if embed.description else ascii_table
+        )
+        footer_txt: str = f"Updates every {compute_time_txt(self._time_interval_mins)}"
         embed.set_footer(
-            text=f"Updates every {compute_time_txt(self._time_interval_mins)}"
-            + "\n"
-            + embed.footer.text,
+            text=(
+                footer_txt + "\n" + embed.footer.text
+                if embed.footer.text
+                else footer_txt
+            ),
             icon_url=embed.footer.icon_url,
         )
         if not self._current_message:

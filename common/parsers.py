@@ -22,7 +22,7 @@ GROK_PLAYERLIST_ROW = (
 GROK_MATCHSTATE = r"MatchState: %{GREEDYDATA:state}"
 
 
-def parse_event(event: str, grok_pattern: str) -> tuple[bool, dict[str, str]]:
+def parse_event(event: str, grok_pattern: str) -> tuple[bool, dict[str, str] | None]:
     pattern = Grok(grok_pattern)
     match = pattern.match(event)
     if not match:
@@ -33,14 +33,14 @@ def parse_event(event: str, grok_pattern: str) -> tuple[bool, dict[str, str]]:
 
 def parse_killfeed_event(event: str) -> KillfeedEvent | None:
     (success, parsed) = parse_event(event, GROK_KILLFEED_EVENT)
-    if not success:
+    if not success or not parsed:
         return None
     return KillfeedEvent(**parsed)
 
 
 def parse_login_event(event: str) -> LoginEvent | None:
     (success, parsed) = parse_event(event, GROK_LOGIN_EVENT)
-    if not success:
+    if not success or not parsed:
         return None
     return LoginEvent(**parsed)
 
@@ -48,7 +48,7 @@ def parse_login_event(event: str) -> LoginEvent | None:
 def parse_chat_event(event: str) -> ChatEvent | None:
     without_new_lines = r" \ ".join(event.splitlines())
     (success, parsed) = parse_event(without_new_lines, GROK_CHAT_EVENT)
-    if not success:
+    if not success or not parsed:
         return None
     return ChatEvent(**parsed)
 
@@ -59,14 +59,14 @@ def parse_date(date_str: str) -> datetime:
 
 def parse_server_info(raw: str) -> ServerInfo | None:
     (success, parsed) = parse_event(raw, GROK_SERVER_INFO)
-    if not success:
+    if not success or not parsed:
         return None
     return ServerInfo(**parsed)
 
 
 def parse_playerlist_row(raw: str) -> Player | None:
     (success, parsed) = parse_event(raw, GROK_PLAYERLIST_ROW)
-    if not success:
+    if not success or not parsed:
         return None
     return Player(**parsed)
 
@@ -79,7 +79,7 @@ def parse_playerlist(raw: str) -> list[Player]:
 
 def parse_matchstate(raw: str) -> str | None:
     (success, parsed) = parse_event(raw, GROK_MATCHSTATE)
-    if not success:
+    if not success or not parsed:
         return None
     return parsed.get("state", None)
 

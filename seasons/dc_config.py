@@ -15,7 +15,7 @@ def to_json(json_str: str) -> SeasonConfig:
 
 
 def make_embed(ctx: commands.Context):
-    embed = common_make_embed(ctx.command, color=discord.Colour(1752220))
+    embed = common_make_embed(str(ctx.command), color=discord.Colour(1752220))
     return embed
 
 
@@ -219,8 +219,11 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             await season.asave()
             await ctx.reply("Updated")
             s_embed = make_season_embed(season)
+            players_table_example = "```PLAYERS TABLE WILL BE HERE```"
             s_embed.description = (
-                s_embed.description + "\n```PLAYERS TABLE WILL BE HERE```"
+                s_embed.description + "\n" + players_table_example
+                if s_embed.description
+                else players_table_example
             )
             await ctx.reply(embed=s_embed)
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)

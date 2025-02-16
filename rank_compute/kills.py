@@ -18,7 +18,7 @@ async def get_kills(
         query = {"playfab_id": argument}
     else:
         query = {"user_name": re.compile(f".*{argument}.*", re.IGNORECASE)}
-    kills_rec: dict = await collection.find_one(query)
+    kills_rec: dict | None = await collection.find_one(query)
     if kills_rec is None:
         return None
     user_name = kills_rec.get("user_name", "<Unknown>")
@@ -46,7 +46,7 @@ async def get_season_kills(
         query = {"playfab_id": argument}
     else:
         query = {"user_name": re.compile(f".*{argument}.*", re.IGNORECASE)}
-    kills_rec: dict = await collection.find_one(query)
+    kills_rec: dict | None = await collection.find_one(query)
     if kills_rec is None:
         return None
     user_name = kills_rec.get("user_name", "<Unknown>")

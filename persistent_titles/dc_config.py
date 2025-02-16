@@ -6,7 +6,7 @@ from config_client.data import pt_config, bot_config
 
 
 def make_embed(ctx: commands.Context):
-    embed = common_make_embed(ctx.command, color=discord.Colour(3447003))
+    embed = common_make_embed(str(ctx.command), color=discord.Colour(3447003))
     return embed
 
 
@@ -83,7 +83,14 @@ def register_cfg_dc_commands(bot: commands.Bot):
         embed.add_field(name="PlayfabId", value=arg_playfab_id)
         embed.add_field(name="Rename", value=arg_rename)
         try:
-            pt_config.rename[arg_playfab_id] = arg_rename
+            if not pt_config:
+                raise Exception(
+                    "PersistentTitles config is not available, please verify logs for errors"
+                )
+            rename_cfg = pt_config.rename or {}
+            rename_cfg[arg_playfab_id] = arg_rename
+            if not pt_config.rename:
+                pt_config.rename = rename_cfg
             pt_config.save()
             embed.add_field(name="Success", value=True, inline=False)
         except Exception as e:
@@ -141,13 +148,18 @@ def register_cfg_dc_commands(bot: commands.Bot):
         embed = make_embed(ctx)
         embed.add_field(name="PlayfabId", value=arg_playfab_id)
         try:
+            if not pt_config.rename:
+                pt_config.rename = {}
             current_rename = pt_config.rename.get(arg_playfab_id, None)
             if not current_rename:
                 raise ValueError(
                     f"PlayfabId {arg_playfab_id} doesn't have any registered rename"
                 )
             embed.add_field(name="RemovedRename", value=current_rename)
-            pt_config.rename.pop(arg_playfab_id, None)
+            rename_cfg = pt_config.rename or {}
+            rename_cfg.pop(arg_playfab_id, None)
+            if not pt_config.rename:
+                pt_config.rename = rename_cfg
             pt_config.save()
             embed.add_field(name="Success", value=True, inline=False)
         except Exception as e:

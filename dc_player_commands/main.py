@@ -15,7 +15,7 @@ import re
 
 def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
     def make_embed(ctx: Context):
-        embed = common_make_embed(ctx.command, color=discord.Colour(3447003))
+        embed = common_make_embed(str(ctx.command), color=discord.Colour(3447003))
         return embed
 
     def rank_2_emoji(n: int):

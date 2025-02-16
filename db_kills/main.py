@@ -11,16 +11,16 @@ from config_client.models import SeasonConfig
 
 
 class DbKills:
-    _collection: AsyncIOMotorCollection | None = None
-    _pending_records: list[KillRecord] | None = None
+    _collection: AsyncIOMotorCollection
+    _pending_records: list[KillRecord]
     _bot_index = 0
-    _player_store: PlayerStore | None = None
+    _player_store: PlayerStore
     _season: SeasonConfig | None = None
 
     def __init__(
         self,
         db_collection: AsyncIOMotorCollection,
-        killfeed_observable: Observable[KillfeedEvent],
+        killfeed_observable: Observable[KillfeedEvent | None],
         player_store: PlayerStore,
         season: SeasonConfig | None,
     ):
@@ -28,14 +28,18 @@ class DbKills:
         self._collection = db_collection
         self._player_store = player_store
         self._season = season
-        SEASON_TOPIC.subscribe(lambda x: asyncio.create_task(self.load_season(x)))
 
-        def _launch_kill_feed_task(event: KillfeedEvent):
+        def _load_season(event: SeasonEvent):
+            asyncio.create_task(self.load_season(event))
+
+        SEASON_TOPIC.subscribe(_load_season)
+
+        def _launch_kill_feed_task(event: KillfeedEvent | None):
             asyncio.create_task(self._process_killfeed(event))
 
         killfeed_observable.subscribe(_launch_kill_feed_task)
 
-    async def load_season(self, event: SeasonEvent):
+    async def load_season(self, event: SeasonEvent | None):
         if event is SeasonEvent.DESTROY:
             self._season = None
         else:
@@ -69,7 +73,7 @@ class DbKills:
                 f"DbKills - Updated {len(tasks)} kill records: {bulk_write.bulk_api_result}"
             )
 
-    async def _process_killfeed(self, kill_event: KillfeedEvent):
+    async def _process_killfeed(self, kill_event: KillfeedEvent | None):
         try:
             if kill_event is None or kill_event.killed_id is None:
                 return

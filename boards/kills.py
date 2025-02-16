@@ -15,7 +15,7 @@ BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
 
 class KillsScoreboard(Board):
-    _kills_collection: AsyncIOMotorCollection | None
+    _kills_collection: AsyncIOMotorCollection
 
     @property
     def file_path(self) -> str:
@@ -53,7 +53,7 @@ class KillsScoreboard(Board):
             user_name = user_name[:24] + ".."
         return [user_name, kill_count_txt, death_count_txt, ratio]
 
-    async def update_achieved_ranks(self, records: dict):
+    async def update_achieved_ranks(self, records: list[dict]):
         inf = float("inf")
         await update_achieved_ranks(
             [
@@ -65,6 +65,10 @@ class KillsScoreboard(Board):
         )
 
     async def send_board(self):
+        if not self._channel:
+            raise ValueError(
+                f"{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+            )
         top_20_items: list[dict] = (
             await self._kills_collection.find()
             .sort("kill_count", -1)

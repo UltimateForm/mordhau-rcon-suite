@@ -42,7 +42,7 @@ class IOBoundDataclass:
     def _load(cls):
         if not cls.exists():
             return cls()
-        json_data: dict = None
+        json_data: dict = {}
         path = cls.get_path()
         with open(path, "r", encoding="utf8") as config_file:
             json_data = json.loads(config_file.read())
@@ -55,7 +55,7 @@ class IOBoundDataclass:
         if not exists:
             return cls()
         path = cls.get_path()
-        json_data: dict = None
+        json_data: dict = {}
         async with aiofiles.open(path, "r", encoding="utf8") as config_file:
             content = await config_file.read()
             json_data = json.loads(content)
@@ -72,7 +72,9 @@ class IOBoundDataclass:
 
     @classmethod
     def get_path(cls) -> str:
-        pass
+        raise NotImplementedError(
+            "get_path classmethod must be implemented in child class"
+        )
 
 
 @dataclass
@@ -115,7 +117,7 @@ class BotConfig(IOBoundDataclass):
         field_map: dict[str, str | int] = {}
         for field_item in fields(BotConfig):
             env_key = field_item.name.upper()
-            field_type = field_item.type
+            field_type = field_item.type if isinstance(field_item.type, type) else str
             value = os.environ.get(env_key)
             if value is None:
                 if field_type.__name__ != "Optional":
@@ -136,7 +138,7 @@ class BotConfig(IOBoundDataclass):
         if len(field_map) == 0:
             return None
         else:
-            return BotConfig(**field_map)
+            return BotConfig(**field_map)  # type: ignore
 
     @classmethod
     def load(cls):

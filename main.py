@@ -37,10 +37,10 @@ load_dotenv()
 
 class MordhauRconSuite:
     tasks: set[Coroutine] = set()
-    login_events: Observable[LoginEvent] = empty()
-    killfeed_events: Observable[KillfeedEvent] = empty()
-    chat_events: Observable[ChatEvent] = empty()
-    matchstate_events: Observable[str] = empty()
+    login_events: Observable[LoginEvent | None] = empty()
+    killfeed_events: Observable[KillfeedEvent | None] = empty()
+    chat_events: Observable[ChatEvent | None] = empty()
+    matchstate_events: Observable[str | None] = empty()
     _bot_config: BotConfig
     _pt_config: PtConfig
     _dc_bot: Bot
@@ -85,7 +85,7 @@ class MordhauRconSuite:
         self.set_up_boards()
         self.set_up_monitoring()
 
-    def _entrance_desk(self, player: LoginEvent):
+    def _entrance_desk(self, player: LoginEvent | None):
         try:
             if player is None:
                 return
@@ -132,7 +132,7 @@ class MordhauRconSuite:
         )
         if self._bot_config.info_board_enabled():
             self.info_board = InfoBoard(
-                self._bot_config.info_channel, self._bot_config.info_refresh_time
+                self._bot_config.info_channel or 0, self._bot_config.info_refresh_time
             )
             self._dc_client.subscribe(self.info_board)
         self._dc_client.subscribe(self.playtime_scoreboard)
@@ -149,7 +149,7 @@ class MordhauRconSuite:
             self.live_sessions_collection,
         )
 
-        def reset_migrant_title(state: str):
+        def reset_migrant_title(state: str | None):
             if not state:
                 return
             if state.lower() == "in progress":
@@ -173,10 +173,10 @@ class MordhauRconSuite:
         if self._bot_config.ks_enabled:
             self.killstreaks = KillStreaks()
 
-            def matchstate_next(state: str):
+            def matchstate_next(state: str | None):
                 if not state:
                     return
-                if state.lower() == "in progress":
+                if state.lower() == "in progress" and self.killstreaks:
                     self.killstreaks.reset()
 
             self.matchstate_events.subscribe(matchstate_next)
@@ -228,6 +228,7 @@ class MordhauRconSuite:
         self.chat_events = bulk_listener.pipe(
             operators.filter(lambda x: x.startswith("Chat")),
             operators.map(parse_chat_event),
+            operators.filter(lambda x: x is not None),
         )
         self.matchstate_events = bulk_listener.pipe(
             operators.filter(lambda x: x.startswith("MatchState")),

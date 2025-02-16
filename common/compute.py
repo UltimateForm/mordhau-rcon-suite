@@ -3,29 +3,31 @@ from itertools import takewhile
 import math
 
 
-def compute_gate(value: int, gates: list[int]) -> int:
+def compute_gate(value: int, gates: list[int]) -> int | None:
     # todo: ditch numpy alltogether
     # we could sort it by highest and then do next([x for x in keys if x <= minutes_played])
-    gates = np.array(gates)
-    lesser_gates = gates[gates <= value]
+    np_gates = np.array(gates)
+    lesser_gates = np_gates[np_gates <= value]
     if len(lesser_gates) == 0:
         return None
     current_gate = lesser_gates.max()
     return current_gate
 
 
-def compute_next_gate(value: int, gates: list[int]) -> int:
+def compute_next_gate(value: int, gates: list[int]) -> int | None:
     # todo: ditch numpy alltogether
     # we could sort it by highest and then do next([x for x in keys if x <= minutes_played])
-    gates = np.array(gates)
-    lesser_gates = gates[gates > value]
+    np_gates = np.array(gates)
+    lesser_gates = np_gates[np_gates > value]
     if len(lesser_gates) == 0:
         return None
     next_gate = lesser_gates.min()
     return next_gate
 
 
-def compute_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
+def compute_gate_text(
+    value: int, gates: dict[str, str]
+) -> tuple[int | None, str | None]:
     gates_keys = list(gates.keys())
     gates_thresholds = list([int(key) for key in gates_keys if key.isnumeric()])
     current_gate = compute_gate(value, gates_thresholds)
@@ -33,7 +35,9 @@ def compute_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
     return (current_gate, gate_txt)
 
 
-def compute_next_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
+def compute_next_gate_text(
+    value: int, gates: dict[str, str]
+) -> tuple[int | None, str | None]:
     gates_keys = list(gates.keys())
     gates_thresholds = list([int(key) for key in gates_keys if key.isnumeric()])
     next_gate = compute_next_gate(value, gates_thresholds)
@@ -42,7 +46,7 @@ def compute_next_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]
 
 
 # TODO: use compute_next_gate instead of the inline if statements
-def compute_time_txt(minutes: int):
+def compute_time_txt(minutes: float):
     is_less_than_hour = minutes < 60
     is_less_than_minute = minutes < 1
     unit = "secs" if is_less_than_minute else "mins" if is_less_than_hour else "hours"
