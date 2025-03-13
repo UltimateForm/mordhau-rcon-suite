@@ -32,13 +32,14 @@ ADD ./rcon/* ./rcon
 
 ADD ./monitoring/* ./monitoring
 
-COPY ./dc_player_commands/* ./dc_player_commands 
+ADD ./dc_player_commands/* ./dc_player_commands 
 
-COPY ./killstreaks/* ./killstreaks
+ADD ./killstreaks/* ./killstreaks
 
-COPY ./seasons/* ./seasons
+ADD ./seasons/* ./seasons
 
-COPY ./main.py ./
+ADD ./main.py ./
 
+ADD ./dc_db_config/* ./dc_db_config
 
 CMD ["pipenv", "run", "python", "main.py"]
