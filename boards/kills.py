@@ -23,14 +23,15 @@ class KillsScoreboard(Board):
 
     def __init__(
         self,
+        client: discord.Client,
         kills_collection: AsyncIOMotorCollection,
         channel_id,
         time_interval: int | None = 60,
     ):
         self._kills_collection = kills_collection
-        super().__init__(channel_id, time_interval)
+        super().__init__(client, channel_id, time_interval)
 
-    def compute_kdr(self, record: dict) -> list[str]:
+    def compute_row(self, record: dict) -> list[str]:
         user_name = record.get("user_name", None) or record.get(
             "playfab_id", "<UNKNOWN>"
         )
@@ -81,7 +82,7 @@ class KillsScoreboard(Board):
             + t2a(
                 header=["Rank", "Username", "K", "D", "R"],
                 body=[
-                    [index + 1, *self.compute_kdr(item)]
+                    [index + 1, *self.compute_row(item)]
                     for (index, item) in enumerate(top_20_items)
                 ],
             )
@@ -91,7 +92,7 @@ class KillsScoreboard(Board):
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
         embed = make_embed(
             ":skull: KILL RECORDS (top 20) :skull:",
-            description=time_sig + "\n" + ascii_table,
+            description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
             color=discord.Colour(15548997),
             footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
         )

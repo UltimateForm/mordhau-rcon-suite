@@ -5,9 +5,10 @@ from dotenv import load_dotenv
 from boards.info import InfoBoard
 from boards.kills import KillsScoreboard
 from boards.season import SeasonScoreboard
+from boards.dc_config import BoardCommands
 from common import logger
 from common.models import LoginEvent, PlayerStore, KillfeedEvent, ChatEvent
-from common.discord import ObservableDiscordClient, common_intents
+from common.discord import ObservableDiscordClient, common_intents, BotHelper
 from ingame_cmd.main import IngameCommands
 from persistent_titles.main import PersistentTitles
 from migrant_titles.main import MigrantTitles, MigrantComputeEvent
@@ -15,7 +16,7 @@ from rcon.rcon_listener import RconListener
 from db_kills.main import DbKills
 from boards.playtime import PlayTimeScoreboard
 from killstreaks.main import KillStreaks
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, Cog
 from reactivex import operators, Observable, empty
 from common.parsers import (
     parse_chat_event,
@@ -27,8 +28,9 @@ from config_client.models import BotConfig, PtConfig, SeasonConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 from typing import Coroutine
 from monitoring.chat_logs import ChatLogs
-from seasons.dc_config import register_season_cfg_commands
+from seasons.dc_config import SeasonAdminCommands
 from seasons.season_controller import SEASON_TOPIC
+from dc_db_config.main import DcDbConfig
 
 load_dotenv()
 
@@ -118,26 +120,37 @@ class MordhauRconSuite:
         playtime_channel = self._bot_config.playtime_channel
         kills_channel = self._bot_config.kills_channel
         self.playtime_scoreboard = PlayTimeScoreboard(
+            self._dc_bot,
             self.playtime_collection,
             playtime_channel,
             self._bot_config.playtime_refresh_time,
         )
         self.kills_scoreboard = KillsScoreboard(
-            self.kills_collection, kills_channel, self._bot_config.kills_refresh_time
+            self._dc_bot,
+            self.kills_collection,
+            kills_channel,
+            self._bot_config.kills_refresh_time,
         )
         self.season_scoreboard = SeasonScoreboard(
+            self._dc_bot,
             self.kills_collection,
             self._bot_config.kills_refresh_time,
             self._initial_season_cfg,
         )
+        cogs: list[Cog] = [
+            self.playtime_scoreboard,
+            self.kills_scoreboard,
+            self.season_scoreboard,
+            BoardCommands(self._dc_bot, self._bot_config),
+        ]
         if self._bot_config.info_board_enabled():
             self.info_board = InfoBoard(
-                self._bot_config.info_channel or 0, self._bot_config.info_refresh_time
+                self._dc_bot,
+                self._bot_config.info_channel or 0,
+                self._bot_config.info_refresh_time,
             )
-            self._dc_client.subscribe(self.info_board)
-        self._dc_client.subscribe(self.playtime_scoreboard)
-        self._dc_client.subscribe(self.kills_scoreboard)
-        self._dc_client.subscribe(self.season_scoreboard)
+            cogs.append(self.info_board)
+        self.tasks.update([self._dc_bot.add_cog(cog) for cog in cogs])
 
     def set_up_experiences(self):
         self.player_store = PlayerStore()
@@ -163,12 +176,10 @@ class MordhauRconSuite:
             self.player_store,
             self._initial_season_cfg,
         )
-
         self.chat_events.subscribe(self.ingame_commands)
         self.login_events.subscribe(self._entrance_desk)
         self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
 
-        register_season_cfg_commands(self._dc_bot, self._bot_config)
         SEASON_TOPIC.subscribe(lambda x: logger.info(f"Season event {x}"))
         if self._bot_config.ks_enabled:
             self.killstreaks = KillStreaks()
@@ -187,9 +198,7 @@ class MordhauRconSuite:
     def set_up_monitoring(self):
         if not self._bot_config.chat_logs_channel:
             return
-        chat_logs = ChatLogs(
-            self._dc_client, self._bot_config.chat_logs_channel, self._dc_bot
-        )
+        chat_logs = ChatLogs(self._dc_client, self._bot_config, self._dc_bot)
         self.chat_events.subscribe(chat_logs)
 
     def set_up_db(self):
@@ -211,7 +220,22 @@ class MordhauRconSuite:
         self._dc_client = ObservableDiscordClient(intents=common_intents)
         register_dc_player_commands(self._dc_bot, self._database)
         self.tasks.update(
-            [self._dc_bot.start(token=d_token), self._dc_client.start(token=d_token)]
+            [
+                self._dc_bot.start(token=d_token),
+                self._dc_client.start(token=d_token),
+                self._dc_bot.add_cog(
+                    DcDbConfig(
+                        self._dc_bot,
+                        self._bot_config,
+                        self.playtime_collection,
+                        self.kills_collection,
+                    )
+                ),
+                self._dc_bot.add_cog(BotHelper(self._dc_bot, self._bot_config)),
+                self._dc_bot.add_cog(
+                    SeasonAdminCommands(self._dc_bot, self._bot_config)
+                ),
+            ]
         )
 
     def set_up_bulk_listeners(self):

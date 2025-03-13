@@ -20,7 +20,6 @@ BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 class SeasonScoreboard(Board):
     _kills_collection: AsyncIOMotorCollection
     _season_cfg: SeasonConfig | None = None
-    _discord_client: discord.Client | None = None
 
     @property
     def file_path(self) -> str:
@@ -36,6 +35,7 @@ class SeasonScoreboard(Board):
 
     def __init__(
         self,
+        client: discord.Client,
         kills_collection: AsyncIOMotorCollection,
         time_interval: int | None = 60,
         initial_season: SeasonConfig | None = None,
@@ -48,20 +48,12 @@ class SeasonScoreboard(Board):
 
         SEASON_TOPIC.subscribe(launch_season_next)
         super().__init__(
+            client,
             initial_season.channel if initial_season and initial_season.channel else 0,
             time_interval,
         )
 
-    def on_next(self, client: discord.Client):
-        self._discord_client = client
-        asyncio.create_task(self.start(client))
-
-    async def load_channel(self, client: discord.Client):
-        channel = await client.fetch_channel(self._channel_id)
-        if isinstance(channel, discord.abc.Messageable):
-            self._channel = channel
-
-    async def start(self, client: discord.Client):
+    async def start(self, bot: discord.Client):
         if not self.active:
             logger.info(
                 f"{self.__class__.__name__}: Ignoring board startup as season is not active"
@@ -70,7 +62,7 @@ class SeasonScoreboard(Board):
         logger.info(
             f"{self.__class__.__name__}: Retrieving discord channel {self._channel_id}"
         )
-        await self.load_channel(client)
+        await self.load_channel(bot)
         await self.delete_previous_message()
         self.job.cancel()
         self.job.start()
@@ -84,12 +76,12 @@ class SeasonScoreboard(Board):
             await self.destroy_msg_id()
             return
         elif event == SeasonEvent.START:
-            if not self._discord_client:
+            if not self._client:
                 logger.info(
                     f"{self.__class__.__name__}: Season started but no client available yet"
                 )
                 return
-            await self.start(self._discord_client)
+            await self.start(self._client)
 
     def compute_kdr(self, record: dict) -> list[str]:
         user_name = record.get("user_name", None) or record.get(

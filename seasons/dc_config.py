@@ -1,7 +1,12 @@
 import seasons.season_controller as sc
 import discord
 from discord.ext import commands
-from common.discord import make_embed as common_make_embed, make_season_embed
+from common.discord import (
+    BotHelper,
+    bot_config_channel_checker,
+    make_embed as common_make_embed,
+    make_season_embed,
+)
 from config_client.models import BotConfig, SeasonConfig, EmbedConfig
 import json
 from dacite import from_dict
@@ -14,18 +19,35 @@ def to_json(json_str: str) -> SeasonConfig:
     return from_dict(SeasonConfig, json.loads(json_str))
 
 
-def make_embed(ctx: commands.Context):
-    embed = common_make_embed(str(ctx.command), color=discord.Colour(1752220))
-    return embed
+ALLOWED_EMBED_FIELDS = [f.name for f in fields(EmbedConfig)]
+ALLOWED_EMBED_FIELDS_STR = ", ".join(ALLOWED_EMBED_FIELDS)
 
 
-def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
-    bot_channel = bot_config.config_bot_channel
+class SeasonAdminCommands(commands.Cog):
+    _client: commands.Bot
+    _cfg: BotConfig
 
-    async def info(ctx: commands.Context):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
-        embed = make_embed(ctx)
+    def __init__(self, client: commands.Bot, bot_config: BotConfig) -> None:
+        self._client = client
+        self._cfg = bot_config
+        self.season.add_check(bot_config_channel_checker(bot_config))
+        super().__init__()
+
+    def make_embed(self, ctx: commands.Context):
+        embed = common_make_embed(str(ctx.command), color=discord.Colour(1752220))
+        return embed
+
+    @commands.group(invoke_without_command=False, description="Season admin commands")
+    async def season(self, ctx: commands.Context):
+        if ctx.subcommand_passed is None:
+            helper = self._client.get_cog("BotHelper")
+            if not isinstance(helper, BotHelper) or not ctx.command:
+                return
+            await helper.help(ctx, ctx.command.name)
+
+    @season.command(description="get info about current configured season")
+    async def info(self, ctx: commands.Context):
+        embed = self.make_embed(ctx)
 
         try:
             exists = await SeasonConfig.aexists()
@@ -52,11 +74,12 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("season:info")(info)
-
-    async def create(ctx: commands.Context, season_type: str, name: str):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(
+        description="create season, currently only supported season_type is `kdr`, name should not have spaces ",
+        usage="<season_type> <name>",
+        help="kdr Winter2022",
+    )
+    async def create(self, ctx: commands.Context, season_type: str, name: str):
         try:
             exists = await SeasonConfig.aexists()
             if exists:
@@ -73,19 +96,16 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             )
             await season.asave()
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.CREATE)
-            await ctx.reply("Season created")
+            await ctx.reply(f"Season {name} created")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:create")(create)
-
-    async def delete(ctx: commands.Context):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(description="delete configured season")
+    async def delete(self, ctx: commands.Context):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -99,17 +119,18 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.DESTROY)
             await ctx.reply("Deleted")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:delete")(delete)
-
-    async def channel_id(ctx: commands.Context, channel: int):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(
+        description="set channel (by id) to send season score board",
+        usage="<channel_id>",
+        help="2912891271860",
+    )
+    async def channel_id(self, ctx: commands.Context, channel: int):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -120,17 +141,18 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)
             await ctx.reply("Updated")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:channel")(channel_id)
-
-    async def exclude(ctx: commands.Context, *playfab_ids: str):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(
+        description="exclude players from season, will not remove already accounted score",
+        usage="<playfab_id_1> <playfab_id_2> <playfab_id_3> <...etc>",
+        help="BB50E7E5B75300F6 AB07435720F6A3",
+    )
+    async def exclude(self, ctx: commands.Context, *playfab_ids: str):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -141,17 +163,42 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)
             await ctx.reply(f"Added {playfab_ids} to {season.name} excluded players")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:exclude")(exclude)
+    @season.command(
+        description="include players in season",
+        usage="<playfab_id_1> <playfab_id_2> <playfab_id_3> <...etc>",
+        help="BB50E7E5B75300F6 AB07435720F6A3",
+    )
+    async def include(self, ctx: commands.Context, *playfab_ids: str):
+        try:
+            exists = await SeasonConfig.aexists()
+            if not exists:
+                raise ValueError("No season is currently available")
+            season = await SeasonConfig.aload()
+            for playfab_id in playfab_ids:
+                if playfab_id in season.exclude:
+                    season.exclude.remove(playfab_id)
+            await season.asave()
+            sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)
+            await ctx.reply(
+                f"Removed {playfab_ids} from {season.name} excluded players"
+            )
+        except Exception as e:
+            embed = self.make_embed(ctx)
+            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
 
-    async def start(ctx: commands.Context):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(
+        description="start configured season, will error out if not ready to start"
+    )
+    async def start(self, ctx: commands.Context):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -170,17 +217,14 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.START)
             await ctx.reply(":saluting_face:")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:start")(start)
-
-    async def end(ctx: commands.Context):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
+    @season.command(description="end configured season")
+    async def end(self, ctx: commands.Context):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -195,27 +239,30 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.END)
             await ctx.reply(":saluting_face:")
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
 
-    bot.command("season:end")(end)
-
-    async def set_embed(ctx: commands.Context, field: str, value: str):
-        if bot_channel and ctx.channel.id != bot_channel:
-            return
-        embed = make_embed(ctx)
+    @season.command(
+        name="embed",
+        description=f"customize embed fields, the allowed fields are {ALLOWED_EMBED_FIELDS_STR}",
+        usage="<field> <value>",
+        help="title \"Winter 2022!\""
+    )
+    async def set_embed(self, ctx: commands.Context, field: str, *value: str):
+        embed = self.make_embed(ctx)
         try:
-            allowed_fields = [f.name for f in fields(EmbedConfig)]
-            if field not in allowed_fields:
-                raise ValueError(f"Invalid field. Allowed fields: {allowed_fields}")
+            if field not in ALLOWED_EMBED_FIELDS:
+                raise ValueError(
+                    f"Invalid field. Allowed fields: {ALLOWED_EMBED_FIELDS}"
+                )
             exists = await SeasonConfig.aexists()
             if not exists:
                 raise ValueError("No season is currently available")
             season = await SeasonConfig.aload()
-            setattr(season.embed_config, field, value)
+            setattr(season.embed_config, field, " ".join(value))
             await season.asave()
             await ctx.reply("Updated")
             s_embed = make_season_embed(season)
@@ -228,10 +275,8 @@ def register_season_cfg_commands(bot: commands.Bot, bot_config: BotConfig):
             await ctx.reply(embed=s_embed)
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)
         except Exception as e:
-            embed = make_embed(ctx)
+            embed = self.make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
-
-    bot.command("season:embed")(set_embed)

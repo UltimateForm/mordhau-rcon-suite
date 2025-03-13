@@ -1,5 +1,7 @@
 # mordhau-rcon-suite
 
+![botimage](public/rconsuite.png)
+
 This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which adds the following new features:
 - recording kills
   - and broadcasting killstreaks
@@ -45,14 +47,17 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [.env Config](#env-config)
       - [FAQ](#faq)
   - [Chat logs](#chat-logs)
-    - [Commands](#commands)
   - [Ingame commands](#ingame-commands)
   - [Discord usage](#discord-usage)
-    - [Config commands](#config-commands)
-    - [Player commands](#player-commands)
+    - [Commands](#commands)
+      - [Admin Persistent titles config (.pt)](#admin-persistent-titles-config-pt)
+      - [Admin Boards config commands (.boards)](#admin-boards-config-commands-boards)
+      - [Admin Db config commands (.db)](#admin-db-config-commands-db)
+      - [Admin Season config commands (.season)](#admin-season-config-commands-season)
     - [Boards](#boards)
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
+        - [Seasonal kill records](#seasonal-kill-records)
   - [IMPORTANT NOTES](#important-notes)
 
 ## Setup
@@ -89,7 +94,7 @@ Here's how the config is loaded:
     11. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
     12. D_TOKEN (discord bot auth token)
     13. TITLE (optional)
-    14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to commands from [Config commands](#config-commands))
+    14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to admin commands, check [this section](#commands))
     15. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
     16. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
     17. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
@@ -345,10 +350,7 @@ If you have the setting chat logs enabled (refer back to [configuration chapter]
 
 If someone writes @admin as part of their chat message the bot will mention @here in the discord channel.
 
-### Commands
-
-- .say {message} 
-  - send a message to the server, will be shown ingame as a server message with your discord name prefixed i.e `ultimate form > hello from discord`
+Check [commands](#commands) for how to use the `say` command which will send messages from discord into game.
 
 
 ## Ingame commands
@@ -369,64 +371,96 @@ If someone writes @admin as part of their chat message the bot will mention @her
 
 I will not tell you here how to setup a discord bot, there's already plenty of guides about that. The bot code here does not manage permissions so it's on you to manage the access.
 
-### Config commands 
+### Commands
 
-These commands just apply to Persistent Titles
+- **kdr**: gets kdr score for player
+  - usage: `.kdr <playfab_id_or_username>`
+- **playtime**: gets playtime score for player
+  - usage: `.playtime <playfab_id_or_username>`
+- **versus**: shows battle tally between two players, as in how many times they've killed each other
+  - usage: `.versus <playfab_id_or_username> <playfab_id_or_username>`
+- **skdr**: gets current seasion kdr score for player
+  - usage: `.skdr <playfab_id_or_username>`
+- **boards**: Boards admin commands
+- **db**: DB admin commands
+- **help**: get help about a command, or use without any command to get help about all commands
+  - usage: `.help <optional_command>`
+- **pt**: Persitent titles config commands
+- **playerlist**: shows online players list
+- **season**: Season admin commands
+- **say**: send message to ingame chat (this command will only work in the chat_logs channel)
+  - usage: `.say <message>`
+  - example: `.say ay yo, it's ya boi from discord comming at you with a new message`
 
-Commands:
-- .setTagFormat {tag format}
-  - sets the tag format, must always include {0} which is the placeholder for the tag
-  - example: `.setTagFormat -{0}-`
-- .setSaluteTimer {number of seconds}
-  - sets the time in seconds for salute to show up in server,
-  - example: `.setSaluteTimer 2`
-- .addTag {playfab id} {tag}
-  - sets a tag for a playfab id
-  - use `*` in place of playfabid to add title for everyone
-  - example: `.addTag D98123JKAS78354 CryBaby`
-- .addRename {playfab id} {new name}
-  - sets a new username for a playfab id
-  - example: `.addRename D98123JKAS78354 ChooseABetterName`
-- .addPlaytimeTag {time} {tag}
-  - sets playtime tag for minimum time played
-  - time must be numeric value representing minutes
-  - example: `.addPlaytimeTag 300 Veteran`
-- .removeTag {playfab id}
-  - removes tag for playfabid
-  - example: `.removeTag D98123JKAS78354`
-- .removeRename {playfab id}
-  - removes a rename for playfabid
-  - example: `.removeRename D98123JKAS78354`
-- .removePlaytimeTag {time}
-  - removes a playtime tag
-  - example: `.removePlaytimeTag 300`
-- .addSalute {playfab id} {salute text}
-  - adds salute for playfab id
-  - use quotes ("") for multi word salutes
-  - example: `.addSalute D98123JKAS78354 "Welcome back Dan"`
-- .removeSalute {playfab id}
-  - removes salute for playfab id
-  - example: `.removeSalute D98123JKAS78354`
-- .ptConf
-  - shows full config
-  - example: `.ptConf`
+#### Admin Persistent titles config (.pt)
+
+- **addPlaytimeTag**: sets playtime title for minimum time played, time must be numeric value representing minutes
+  - usage: `.pt addPlaytimeTag <min_time> <title>`
+  - example: `.pt addPlaytimeTag 300 Veteran`
+- **addTag**: adds a persistant player title, use quotes for titles that include spaces, use * in place of playfabid to add title for everyone
+  - usage: `.pt addTag <playfab_id> <title>`
+  - example: `.pt addTag D98123JKAS78354 CryBaby`
+- **removeRename**: removes a rename for playfabid
+  - usage: `.pt removeRename <playfab_id>`
+  - example: `.pt removeRename D98123JKAS78354`
+- **addSalute**: adds salute for playfab id
+  - usage: `.pt addSalute <playfab_id> <salute_txt>`
+  - example: `.pt addSalute D98123JKAS78354 "Welcome back Dan"`
+- **removeSalute**: removes salute for playfab id
+  - usage: `.pt removeSalute <playfab_id>`
+  - example: `.pt removeSalute D98123JKAS78354`
+- **addRename**: sets a new username for a playfab id
+  - usage: `.pt addRename <playfab_id> <new_name>`
+  - example: `.pt addRename D98123JKAS78354 ChooseABetterName`
+- **removeTag**: removes tag for playfabid
+  - usage: `.pt removeTag <min_time>`
+  - example: `.pt removeTag 300`
+- **ptConf**: show the persistent titles config
+- **setSaluteTimer**: sets the time in seconds for salute to show up in server
+  - usage: `.pt setSaluteTimer <arg_timer>`
+- **removePlaytimeTag**: removes a playtime tag
+  - usage: `.pt removePlaytimeTag <min_time>`
+  - example: `.pt removePlaytimeTag 300`
+- **setTagFormat**: sets the tag format, must always include {0} which is the placeholder for the tag
+  - usage: `.pt setTagFormat <format>`
+  - example: `.pt setTagFormat -{0}-`
+
+#### Admin Boards config commands (.boards)
+
+- **board_reset**: resets a board, will delete current board message and send a new one, identify the boards by thes names InfoBoard, KillsScoreboard, PlayTimeScoreboard
+  - usage: `.boards board_reset <board_name>`
+- **announce**: set an announcement to be shown in a sent board, identify the boards by thes names InfoBoard, KillsScoreboard, PlayTimeScoreboard
+  - usage: `.boards announce <board_name> <announcement>`
+
+#### Admin Db config commands (.db)
+
+- **chg_name**: change a player's name in DB
+  - usage: `.db chg_name <plafayb_id> <new_name>`
+- **metadata**: show metadata of db
 
 
-### Player commands
+#### Admin Season config commands (.season)
 
-Commands:
-- .kdr {playfab id or username}
-  - gets kdr score for player
-  - example: `.kdr D98123JKAS78354`
-- .playtime {playfab id or username}
-  - gets playtime score for player
-  - example: `.playtime D98123JKAS78354`
-- .playerlist
-  - shows online players list
-- .versus {playfab id or username} {playfab id or username}
-  - shows battle tally between two players, as in how many times they've killed each other
-  - example: `.versus D98123JKAS78354 H1221A0G838D91I`
-  - DO NOT CONFUSE WITH INGAME COMMAND WHICH REQUIRES ONLY ONE ARGUMENT
+- **channel_id**: set channel (by id) to send season score board
+  - usage: `.season channel_id <channel_id>`
+  - example: `.season channel_id 2912891271860`
+- **delete**: delete configured season
+- **info**: get info about current configured season
+- **create**: create season, currently only supported season_type is `kdr`, name should not have spaces 
+  - usage: `.season create <season_type> <name>`
+  - example: `.season create kdr Winter2022`
+- **end**: end configured season
+- **embed**: customize embed fields, the allowed fields are title, description, image_url, footer_txt
+  - usage: `.season embed <field> <value>`
+  - example: `.season embed title "Winter 2022!"`
+- **include**: include players in season
+  - usage: `.season include <playfab_id_1> <playfab_id_2> <playfab_id_3> <...etc>`
+  - example: `.season include BB50E7E5B75300F6 AB07435720F6A3`
+- **start**: start configured season, will error out if not ready to start
+- **exclude**: exclude players from season, will not remove already accounted score
+  - usage: `.season exclude <playfab_id_1> <playfab_id_2> <playfab_id_3> <...etc>`
+  - example: `.season exclude BB50E7E5B75300F6 AB07435720F6A3`
+
 
 ### Boards
 
@@ -471,6 +505,10 @@ Example board with random usernames:
 ║  3          f954c2dd45f76295        22   11   2.0  ║
 ╚════════════════════════════════════════════════════╝
 ```
+
+##### Seasonal kill records
+
+The default kdr boards is a persistent one which might leave new players out of board forever unless older players stop playing. To keep the competition fresh you can add seasonal leaderboards have limited time and start counting from 0. Below are the steps for configring a season.
 
 ## IMPORTANT NOTES
 1. This bot doesn't use (yet) the native discord commands

@@ -59,7 +59,9 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("kdr")(kdr)
+    bot.command(
+        "kdr", description="gets kdr score for player", usage="<playfab_id_or_username>"
+    )(kdr)
 
     async def skdr(ctx: Context, argument: str):
         collection = db["kills"]
@@ -94,7 +96,11 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("skdr")(skdr)
+    bot.command(
+        "skdr",
+        description="gets current seasion kdr score for player",
+        usage="<playfab_id_or_username>",
+    )(skdr)
 
     async def playtime(ctx: Context, argument: str):
         collection = db["playtime"]
@@ -118,7 +124,11 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("playtime")(playtime)
+    bot.command(
+        "playtime",
+        description="gets playtime score for player",
+        usage="<playfab_id_or_username>",
+    )(playtime)
 
     async def playerlist(ctx: Context):
         embed = make_embed(ctx)
@@ -144,7 +154,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("playerlist")(playerlist)
+    bot.command("playerlist", description="shows online players list")(playerlist)
 
     async def versus(ctx: Context, player1: str, player2: str):
         embed = make_embed(ctx)
@@ -184,5 +194,9 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
 
-    bot.command("versus")(versus)
-    bot.command("vs")(versus)
+    bot.command(
+        "versus",
+        description="shows battle tally between two players, as in how many times they've killed each other",
+        usage="<playfab_id_or_username> <playfab_id_or_username>",
+        aliases=["vs"],
+    )(versus)

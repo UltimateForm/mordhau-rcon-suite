@@ -43,14 +43,22 @@ class InfoBoard(Board):
             time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
             embed = make_embed(
                 server_info.server_name,
-                description=time_sig,
+                description="\n".join([time_sig, self.announcement]),
                 color=discord.Colour(3447003),
                 footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
+            )
+            num_players_onlines = len(players)
+            players_online = f"Players online: {num_players_onlines}"
+            await self._client.change_presence(
+                activity=discord.Activity(
+                    type=discord.ActivityType.watching,
+                    name=f"{num_players_onlines} players online",
+                )
             )
             embed.add_field(name="Gamemode", value=server_info.game_mode)
             embed.add_field(name="Map", value=server_info.map)
             embed.add_field(
-                name=f"Players online: ({len(players)})",
+                name=players_online,
                 value=players_block,
                 inline=False,
             )
