@@ -48,16 +48,12 @@ class MordhauRconSuite:
     _dc_bot: Bot
     _dc_client: ObservableDiscordClient
     _database: AsyncIOMotorDatabase
-    migrant_titles: MigrantTitles
+    migrant_titles: MigrantTitles | None = None
     peristent_titles: PersistentTitles
     ingame_commands: IngameCommands
     player_store: PlayerStore
     db_kills: DbKills
     killstreaks: KillStreaks | None = None
-    playtime_scoreboard: PlayTimeScoreboard
-    info_scoreboard: InfoBoard | None = None
-    kills_scoreboard: KillsScoreboard
-    season_scoreboard: SeasonScoreboard
     _initial_season_cfg: SeasonConfig | None = None
 
     @property
@@ -92,7 +88,10 @@ class MordhauRconSuite:
             if player is None:
                 return
             if player.instance == "out":
-                if self.migrant_titles.rex_compute.current_rex == player.player_id:
+                if (
+                    self.migrant_titles
+                    and self.migrant_titles.rex_compute.current_rex == player.player_id
+                ):
                     self.migrant_titles.rex_compute.current_rex = ""
                 self.player_store.players.pop(player.player_id, None)
                 if self.killstreaks:
@@ -119,42 +118,54 @@ class MordhauRconSuite:
     def set_up_boards(self):
         playtime_channel = self._bot_config.playtime_channel
         kills_channel = self._bot_config.kills_channel
-        self.playtime_scoreboard = PlayTimeScoreboard(
-            self._dc_bot,
-            self.playtime_collection,
-            playtime_channel,
-            self._bot_config.playtime_refresh_time,
-        )
-        self.kills_scoreboard = KillsScoreboard(
-            self._dc_bot,
-            self.kills_collection,
-            kills_channel,
-            self._bot_config.kills_refresh_time,
-        )
-        self.season_scoreboard = SeasonScoreboard(
-            self._dc_bot,
-            self.kills_collection,
-            self._bot_config.kills_refresh_time,
-            self._initial_season_cfg,
-        )
-        cogs: list[Cog] = [
-            self.playtime_scoreboard,
-            self.kills_scoreboard,
-            self.season_scoreboard,
-            BoardCommands(self._dc_bot, self._bot_config),
-        ]
+        cogs: list[Cog] = []
+        if self._bot_config.playtime_board_enabled():
+            playtime_scoreboard = PlayTimeScoreboard(
+                self._dc_bot,
+                self.playtime_collection,
+                playtime_channel,
+                self._bot_config.playtime_refresh_time,
+            )
+            cogs.append(playtime_scoreboard)
+        if self._bot_config.kills_board_enabled():
+            kills_scoreboard = KillsScoreboard(
+                self._dc_bot,
+                self.kills_collection,
+                kills_channel,
+                self._bot_config.kills_refresh_time,
+            )
+            cogs.append(kills_scoreboard)
+        if self._bot_config.season_board_enabled():
+            season_scoreboard = SeasonScoreboard(
+                self._dc_bot,
+                self.kills_collection,
+                self._bot_config.kills_refresh_time,
+                self._initial_season_cfg,
+            )
+            cogs.append(season_scoreboard)
+        cogs.append(BoardCommands(self._dc_bot, self._bot_config))
         if self._bot_config.info_board_enabled():
-            self.info_board = InfoBoard(
+            info_board = InfoBoard(
                 self._dc_bot,
                 self._bot_config.info_channel or 0,
                 self._bot_config.info_refresh_time,
             )
-            cogs.append(self.info_board)
+            cogs.append(info_board)
         self.tasks.update([self._dc_bot.add_cog(cog) for cog in cogs])
 
     def set_up_experiences(self):
         self.player_store = PlayerStore()
-        self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
+        if self._bot_config.title:
+            self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
+
+            def reset_migrant_title(state: str | None):
+                if not state:
+                    return
+                if state.lower() == "in progress" and self.migrant_titles:
+                    self.migrant_titles.rex_compute.current_rex = ""
+
+            self.matchstate_events.subscribe(reset_migrant_title)
+            self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
         self.peristent_titles = PersistentTitles(
             self.login_events,
             self._dc_bot,
@@ -162,13 +173,6 @@ class MordhauRconSuite:
             self.live_sessions_collection,
         )
 
-        def reset_migrant_title(state: str | None):
-            if not state:
-                return
-            if state.lower() == "in progress":
-                self.migrant_titles.rex_compute.current_rex = ""
-
-        self.matchstate_events.subscribe(reset_migrant_title)
         self.ingame_commands = IngameCommands(self._pt_config, self._database)
         self.db_kills = DbKills(
             self.kills_collection,
@@ -178,7 +182,6 @@ class MordhauRconSuite:
         )
         self.chat_events.subscribe(self.ingame_commands)
         self.login_events.subscribe(self._entrance_desk)
-        self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
 
         SEASON_TOPIC.subscribe(lambda x: logger.info(f"Season event {x}"))
         if self._bot_config.ks_enabled:

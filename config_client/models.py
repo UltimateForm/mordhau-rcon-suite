@@ -91,6 +91,7 @@ class BotConfig(IOBoundDataclass):
     season_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
     chat_logs_channel: Optional[int] = None
+    title: Optional[str] = None
     boards_min_to_format: Optional[int] = 100000
     config_bot_channel: int = 0
     rcon_password: str = ""
@@ -98,7 +99,6 @@ class BotConfig(IOBoundDataclass):
     rcon_port: int = 7779
     rcon_connect_timeout: int = 30
     d_token: str = ""
-    title: str = "KING"
     db_connection_string: str = "mongodb+srv://user:password@0.0.0.0"
     db_name: str = "db"
     experimental_bulk_listener: bool = False
@@ -111,6 +111,9 @@ class BotConfig(IOBoundDataclass):
 
     def kills_board_enabled(self):
         return bool(self.kills_channel)
+
+    def season_board_enabled(self):
+        return bool(self.season_board_enabled)
 
     @classmethod
     def _load_from_env(cls):
