@@ -86,10 +86,10 @@ Here's how the config is loaded:
     3. RCON_PORT
     4. RCON_CONNECT_TIMEOUT (optional)
     5. DB_NAME
-    6. PLAYTIME_CHANNEL (channel to post playtime scoreboard, read more at [boards](#boards))
-    7. PLAYTIME_REFRESH_TIME (time interval in seconds for playtime scoreboard update)
-    8. KILLS_CHANNEL (channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
-    9. KILLS_REFRESH_TIME (time interval in seconds for kills/death/ratio scoreboard update)
+    6. PLAYTIME_CHANNEL (optional, channel to post playtime scoreboard, read more at [boards](#boards))
+    7. PLAYTIME_REFRESH_TIME (optional, time interval in seconds for playtime scoreboard update)
+    8. KILLS_CHANNEL (optional, channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
+    9. KILLS_REFRESH_TIME (optional, time interval in seconds for kills/death/ratio scoreboard update)
     10. INFO_CHANNEL (optional, channel to post server info)
     11. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
     12. D_TOKEN (discord bot auth token)
@@ -427,9 +427,9 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 
 #### Admin Boards config commands (.boards)
 
-- **board_reset**: resets a board, will delete current board message and send a new one, identify the boards by thes names InfoBoard, KillsScoreboard, PlayTimeScoreboard
+- **board_reset**: resets a board, will delete current board message and send a new one, identify the boards by the names InfoBoard, KillsScoreboard, PlayTimeScoreboard
   - usage: `.boards board_reset <board_name>`
-- **announce**: set an announcement to be shown in a sent board, identify the boards by thes names InfoBoard, KillsScoreboard, PlayTimeScoreboard
+- **announce**: set an announcement to be shown in a sent board, identify the boards by the names InfoBoard, KillsScoreboard, PlayTimeScoreboard
   - usage: `.boards announce <board_name> <announcement>`
 
 #### Admin Db config commands (.db)

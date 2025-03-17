@@ -55,7 +55,7 @@ class BoardCommands(commands.Cog):
             await helper.help(ctx, ctx.command.name)
 
     @boards.command(
-        description=f"set an announcement to be shown in a sent board, identify the boards by thes names {KNOWN_BOARDS_JOINED}",
+        description=f"set an announcement to be shown in a sent board, identify the boards by the names {KNOWN_BOARDS_JOINED}",
         usage="<board_name> <announcement>",
     )
     async def announce(self, ctx: commands.Context, board_name: str, *announce: str):
@@ -77,10 +77,10 @@ class BoardCommands(commands.Cog):
             await ctx.message.reply(embed=embed)
 
     @boards.command(
-        description=f"resets a board, will delete current board message and send a new one, identify the boards by thes names {KNOWN_BOARDS_JOINED}",
+        description=f"resets a board, will delete current board message and send a new one, identify the boards by the names {KNOWN_BOARDS_JOINED}",
         usage="<board_name>",
     )
-    async def board_reset(self, ctx: commands.Context, board_name: str):
+    async def reset(self, ctx: commands.Context, board_name: str):
         if (
             self._cfg.config_bot_channel
             and ctx.channel.id != self._cfg.config_bot_channel

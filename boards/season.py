@@ -12,7 +12,6 @@ from config_client.models import SeasonConfig
 from seasons.season_controller import SEASON_TOPIC, SeasonEvent
 from common import logger
 from common.compute import compute_time_txt
-from rank_compute.kills import update_achieved_ranks
 
 BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
 
@@ -69,6 +68,7 @@ class SeasonScoreboard(Board):
 
     async def season_next(self, event: SeasonEvent):
         self._season_cfg = await SeasonConfig.aload()
+        self._channel_id = self._season_cfg.channel or 0
         if event == SeasonEvent.END:
             self.job.stop()
             self._channel = None
@@ -95,46 +95,34 @@ class SeasonScoreboard(Board):
             user_name = user_name[:24] + ".."
         return [user_name, kill_count, death_count, ratio]
 
-    async def update_achieved_ranks(self, records: list[dict]):
-        if not self._season_cfg:
-            # just in case....
-            return
-        inf = float("inf")
-        await update_achieved_ranks(
-            [
-                {"playfab_id": item["playfab_id"], "rank": index + 1}
-                for (index, item) in enumerate(records)
-                if item.get("achiev", {}).get(self._season_cfg.name, inf) > index + 1
-            ],
-            self._kills_collection,
-            self._season_cfg,
-        )
-
     async def send_board(self):
         if not self._channel:
             raise ValueError(
-                "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+                f"{self.__class__.__name__}: Channel {self._channel_id} not loaded"
             )
         if not self._season_cfg or not self._season_cfg.is_active:
             return
         top_20_items: list[dict] = (
-            await self._kills_collection.find()
+            await self._kills_collection.find(
+                {f"season.{self._season_cfg.name}": {"$exists": True}}
+            )
             .sort(f"season.{self._season_cfg.name}.kill_count", -1)
             .limit(20)
             .to_list()
         )
-        asyncio.create_task(self.update_achieved_ranks(top_20_items))
-        ascii_table = (
-            "```"
-            + t2a(
-                header=["Rank", "Username", "K", "D", "R"],
-                body=[
-                    [index + 1, *self.compute_kdr(item)]
-                    for (index, item) in enumerate(top_20_items)
-                ],
+        ascii_table = "```No players have played this season```"
+        if len(top_20_items):
+            ascii_table = (
+                "```"
+                + t2a(
+                    header=["Rank", "Username", "K", "D", "R"],
+                    body=[
+                        [index + 1, *self.compute_kdr(item)]
+                        for (index, item) in enumerate(top_20_items)
+                    ],
+                )
+                + "```"
             )
-            + "```"
-        )
         embed = make_season_embed(self._season_cfg)
         embed.description = (
             embed.description + "\n" + ascii_table if embed.description else ascii_table

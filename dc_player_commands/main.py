@@ -1,7 +1,8 @@
 import asyncio
 import discord
 from discord.ext.commands import Bot, Context
-from common import parsers
+from common import logger, parsers
+from common.compute import make_ordinal
 from common.discord import make_embed as common_make_embed
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
@@ -20,19 +21,22 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
 
     def rank_2_emoji(n: int):
         rank_emoji_map = {0: ":first_place:", 1: ":second_place:", 2: ":third_place:"}
-        rank_out = rank_emoji_map.get(n, str(n + 1))
+        rank_out = rank_emoji_map.get(n, make_ordinal(n + 1))
         return rank_out
 
     async def kdr(ctx: Context, argument: str):
         collection = db["kills"]
-        embed = make_embed(ctx)
-        embed.color = 0xFFFC2E
+
         try:
+            embed = make_embed(ctx)
+            embed.color = 0xFFFC2E
             kill_score = await get_kills(argument, collection)
             if kill_score is None:
                 raise Exception("Not found")
             embed.add_field(
-                name="Rank", value=rank_2_emoji(kill_score.rank), inline=False
+                name="Rank",
+                value=rank_2_emoji(kill_score.rank) if kill_score.rank else "None",
+                inline=False,
             )
             embed.add_field(name="PlayfabId", value=kill_score.player_id)
             embed.add_field(name="Username", value=kill_score.user_name)
@@ -54,6 +58,8 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                         awards.append(f"**{k}** {rank}")
                 embed.add_field(name="", value="〡".join(awards))
         except Exception as e:
+            logger.error(str(e))
+            embed = make_embed(ctx)
             embed.add_field(name="Success", value=False, inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
@@ -78,7 +84,9 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             if kill_score is None:
                 raise Exception("Not found")
             embed.add_field(
-                name="Rank", value=rank_2_emoji(kill_score.rank), inline=False
+                name="Rank",
+                value=rank_2_emoji(kill_score.rank) if kill_score.rank else "None",
+                inline=False,
             )
             embed.title = season_cfg.embed_config.title
             embed.description = season_cfg.embed_config.description

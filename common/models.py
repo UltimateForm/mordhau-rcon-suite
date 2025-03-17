@@ -72,7 +72,7 @@ class PlaytimeScore(Player):
 class KillScore(Player):
     kill_count: int
     death_count: int
-    rank: int
+    rank: int | None
     kills: dict[str, int] = field(default_factory=dict)
     achievements: dict[str, int] = field(default_factory=dict)
     ratio: float | None = field(init=False)
@@ -82,4 +82,7 @@ class KillScore(Player):
             round(self.kill_count / self.death_count, 2)
             if self.death_count > 0
             else None
+        )
+        self.achievements = dict(
+            [item for item in self.achievements.items() if item[1] is not None]
         )

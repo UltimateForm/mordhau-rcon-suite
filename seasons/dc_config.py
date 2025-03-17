@@ -53,7 +53,7 @@ class SeasonAdminCommands(commands.Cog):
             exists = await SeasonConfig.aexists()
             if not exists:
                 raise FileNotFoundError(
-                    "No season is currently available, you can create one with `.season:create <type[both|kdr|playtime]> <name>`"
+                    "No season is currently available, you can create one with `.season create`"
                 )
             season = await SeasonConfig.aload()
             embed.add_field(name="Name", value=season.name)
@@ -83,8 +83,8 @@ class SeasonAdminCommands(commands.Cog):
         try:
             exists = await SeasonConfig.aexists()
             if exists:
-                raise FileNotFoundError(
-                    "A season already exists, delete current one with `.season:delete` before creating new one"
+                raise FileExistsError(
+                    "A season already exists, delete current one with `.season delete` before creating new one"
                 )
             name_pattern = re.compile(r"^\S*$")
             if not name_pattern.match(name):
@@ -113,7 +113,7 @@ class SeasonAdminCommands(commands.Cog):
             current = await SeasonConfig.aload()
             if current.is_active:
                 raise ValueError(
-                    "Season is active, end it before deleting (`.season:end`)"
+                    "Season is active, end it before deleting (`.season end`)"
                 )
             await SeasonConfig.adelete()
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.DESTROY)
@@ -130,7 +130,7 @@ class SeasonAdminCommands(commands.Cog):
         usage="<channel_id>",
         help="2912891271860",
     )
-    async def channel_id(self, ctx: commands.Context, channel: int):
+    async def channel(self, ctx: commands.Context, channel: int):
         try:
             exists = await SeasonConfig.aexists()
             if not exists:
@@ -203,14 +203,18 @@ class SeasonAdminCommands(commands.Cog):
             exists = await SeasonConfig.aexists()
             if not exists:
                 raise ValueError(
-                    "No season is currently available, you can create one with `.season:create <type[both|kdr|playtime]> <name>`"
+                    "No season is currently available, you can create one with `.season create`"
                 )
             season = await SeasonConfig.aload()
             if season.is_active:
                 raise ValueError("Season has already started")
+            if season.end_date:
+                raise ValueError(
+                    "Season has already ended and cannot be restarted. Delete it (.season delete) and create a new one"
+                )
             if not season.channel:
                 raise ValueError(
-                    "Season has no registered channel id, run `.season:channel <channelId>` to set the channel"
+                    "Season has no registered channel id, run `.season channel` to set the channel"
                 )
             season.start_date = date.today().strftime("%d/%m/%Y")
             await season.asave()
@@ -232,7 +236,7 @@ class SeasonAdminCommands(commands.Cog):
             season = await SeasonConfig.aload()
             if not season.is_active:
                 raise ValueError(
-                    "Season isn't active. Run .season:start to start season"
+                    "Season isn't active. Run `.season start` to start season"
                 )
             season.end_date = date.today().strftime("%d/%m/%Y")
             await season.asave()
@@ -249,7 +253,7 @@ class SeasonAdminCommands(commands.Cog):
         name="embed",
         description=f"customize embed fields, the allowed fields are {ALLOWED_EMBED_FIELDS_STR}",
         usage="<field> <value>",
-        help="title \"Winter 2022!\""
+        help='title "Winter 2022!"',
     )
     async def set_embed(self, ctx: commands.Context, field: str, *value: str):
         embed = self.make_embed(ctx)

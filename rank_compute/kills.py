@@ -55,8 +55,8 @@ async def get_season_kills(
     death_count = season_dict.get("death_count", 0)
     player_id = kills_rec["playfab_id"]
     kills = kills_rec.get("kills", {})
-    rank = 0
-    if get_rank:
+    rank = None
+    if get_rank and kill_count and death_count:
         rank = await collection.count_documents(
             {f"season.{season_config.name}.kill_count": {"$gt": kill_count}}
         )
@@ -73,6 +73,9 @@ async def update_achieved_ranks(
         return
     tasks: list[UpdateOne] = []
     for record in records:
+        if record.get("rank", None) is None:
+            logger.error(f"update_achieved_ranks - Invalid rank for record {record}")
+            continue
         mutation_key = f"achiev.{'lifetime_rank' if season is None else season.name}"
         update = UpdateOne(
             {"playfab_id": record["playfab_id"]},

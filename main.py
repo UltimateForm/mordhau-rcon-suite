@@ -29,7 +29,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 from typing import Coroutine
 from monitoring.chat_logs import ChatLogs
 from seasons.dc_config import SeasonAdminCommands
-from seasons.season_controller import SEASON_TOPIC
+from seasons.season_controller import SEASON_TOPIC, SeasonWatch
 from dc_db_config.main import DcDbConfig
 
 load_dotenv()
@@ -184,6 +184,9 @@ class MordhauRconSuite:
         self.login_events.subscribe(self._entrance_desk)
 
         SEASON_TOPIC.subscribe(lambda x: logger.info(f"Season event {x}"))
+        SEASON_TOPIC.subscribe(
+            SeasonWatch(self.kills_collection, self._initial_season_cfg)
+        )
         if self._bot_config.ks_enabled:
             self.killstreaks = KillStreaks()
 

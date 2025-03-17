@@ -60,7 +60,7 @@ class KillsScoreboard(Board):
             [
                 {"playfab_id": item["playfab_id"], "rank": index + 1}
                 for (index, item) in enumerate(records)
-                if item.get("achiev", {}).get("lifetime_rank", inf) < index + 1
+                if item.get("achiev", {}).get("lifetime_rank", inf) > index + 1
             ],
             self._kills_collection,
         )
