@@ -61,7 +61,8 @@ class IngameCommands(Observer[ChatEvent | None]):
         if user_kdr is None:
             full_msg = f"{user_name} has no recorded playtime"
         else:
-            full_msg = f"{user_kdr.user_name} is KDR RANKED {user_kdr.rank + 1}\nKills {user_kdr.kill_count} | Deaths {user_kdr.death_count} | Ratio {user_kdr.ratio} "
+            rank_cmp = user_kdr.rank + 1 if user_kdr.rank is not None else "N/A"
+            full_msg = f"{user_kdr.user_name} is KDR RANKED {rank_cmp}\nKills {user_kdr.kill_count} | Deaths {user_kdr.death_count} | Ratio {user_kdr.ratio} "
         async with RconContext() as client:
             await client.execute(f"say {full_msg}")
 
