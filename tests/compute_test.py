@@ -5,6 +5,7 @@ from common.compute import (
     compute_next_gate_text,
     compute_time_txt,
     slice_text_array_at_total_length,
+    split_chunks,
 )
 
 
@@ -149,3 +150,55 @@ def test_slice_text_array_at_total_length():
     r = slice_text_array_at_total_length(10, txt)
     assert r[0] == ["hello", "world"]
     assert len(r) == 3
+
+
+def test_split_chunks_splits_chunks_max_chunk_size():
+    sample_text = """
+this line is at up to length 033
+this line is at up to length 066
+this line is at up to length 099
+this line is at up to length 132
+this line is at up to length 165
+this line is at up to length 198
+this line is at up to length 231
+"""
+    chunks = split_chunks(sample_text, 100)
+    assert len(chunks) == 3
+    assert chunks[0].splitlines()[-1] == "this line is at up to length 099"
+
+
+def test_split_chunks_empty_string():
+    sample_text = ""
+    chunks = split_chunks(sample_text, 100)
+    assert len(chunks) == 0
+
+
+def test_split_chunks_single_line():
+    sample_text = "this is a single line"
+    chunks = split_chunks(sample_text, 100)
+    assert len(chunks) == 1
+    assert chunks[0] == "this is a single line\n"
+
+
+def test_split_chunks_exact_chunk_size():
+    sample_text = """
+this line is at up to length 033
+this line is at up to length 066
+this line is at up to length 099
+"""
+    chunks = split_chunks(sample_text.strip(), 33)
+    assert len(chunks) == 3
+    assert chunks[0] == "this line is at up to length 033\n"
+    assert chunks[1] == "this line is at up to length 066\n"
+    assert chunks[2] == "this line is at up to length 099\n"
+
+
+def test_split_chunks_large_chunk_size():
+    sample_text = """
+this line is at up to length 033
+this line is at up to length 066
+this line is at up to length 099
+"""
+    chunks = split_chunks(sample_text, 1000)
+    assert len(chunks) == 1
+    assert chunks[0].splitlines()[-1] == "this line is at up to length 099"

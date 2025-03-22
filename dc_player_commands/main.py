@@ -12,6 +12,7 @@ from rcon.rcon import RconContext
 from rank_compute.kills import get_kills, get_season_kills
 from config_client.models import SeasonConfig
 import re
+from db_kills import aggregation
 
 
 def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
@@ -208,3 +209,30 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         usage="<playfab_id_or_username> <playfab_id_or_username>",
         aliases=["vs"],
     )(versus)
+
+    async def kills(ctx: Context, playfab_id: str):
+        collection = db["kills"]
+        embed = make_embed(ctx)
+        embed.color = 0x080808
+        try:
+            embed.description = f"Players killed by {playfab_id}"
+            killed_str: str = ""
+            async for player in collection.aggregate(
+                aggregation.get_killed_players_pipeline(playfab_id)
+            ):
+                killed_name = player.get("user_name", "Unknown")
+                killed_playfab_id = player.get("playfab_id", "Unknown")
+                times_killed = player.get("times_killed", 0)
+                killed_str += (
+                    f"{killed_name} ({killed_playfab_id}): {times_killed} times\n"
+                )
+            embed.description += "```\n" + killed_str + "```"
+        except Exception as e:
+            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997
+        await ctx.message.reply(embed=embed)
+
+    bot.command(
+        "kills", description="shows players killed by arg player", usage="<playfab_id>"
+    )(kills)

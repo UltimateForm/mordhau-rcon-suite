@@ -101,3 +101,19 @@ def make_ordinal(n: int) -> str:
     else:
         suffix = ["th", "st", "nd", "rd", "th"][min(n % 10, 4)]
     return str(n) + suffix
+
+
+def split_chunks(sample: str, chunk_size: int) -> list[str]:
+    lines = sample.splitlines()
+    batches: list[str] = []
+    while lines:
+        curr = lines.pop(0) + "\n"
+        if not batches:
+            batches.append(curr)
+        else:
+            new_len = len(batches[-1] + curr)
+            if new_len <= chunk_size:
+                batches[-1] += curr
+            else:
+                batches.append(curr)
+    return batches
