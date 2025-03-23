@@ -217,9 +217,12 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         collection = db["kills"]
         try:
             killed_str: str = ""
+            killer_name: str = ""
             async for player in collection.aggregate(
                 aggregation.get_killed_players_pipeline(playfab_id)
             ):
+                if not killer_name:
+                    killer_name = player.get("killer_name", "Unknown")
                 killed_name = player.get("user_name", "Unknown")
                 killed_playfab_id = player.get("playfab_id", "Unknown")
                 times_killed = player.get("times_killed", 0)
@@ -232,7 +235,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 chunk_embed = make_embed(ctx)
                 chunk_embed.color = 0xFFFC2E
                 chunk_embed.description = (
-                    f"Players killed by {playfab_id}\n```\n{chunk}```"
+                    f"## Players killed by **{killer_name}** ({playfab_id})\n```\n{chunk}```"
                 )
                 pages.append(Page(embeds=[chunk_embed]))
             paginator = Paginator(pages)
@@ -246,5 +249,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             await ctx.message.reply(embed=error_embed)
 
     bot.command(
-        "kills", description="shows players killed by arg player", usage="<playfab_id>"
+        "kills",
+        description="shows players killed by arg player, use commands such as .kdr or .playtime to obtain playfab id if needed",
+        usage="<playfab_id>",
     )(kills)

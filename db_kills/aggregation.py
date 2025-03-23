@@ -1,7 +1,12 @@
 def get_killed_players_pipeline(playfab_id: str):
     return [
         {"$match": {"playfab_id": playfab_id}},
-        {"$project": {"kills": {"$objectToArray": "$kills"}}},
+        {
+            "$project": {
+                "kills": {"$objectToArray": "$kills"},
+                "killer_name": "$user_name",
+            }
+        },
         {"$unwind": {"path": "$kills"}},
         {
             "$lookup": {
@@ -17,6 +22,7 @@ def get_killed_players_pipeline(playfab_id: str):
                 "user_name": "$player.user_name",
                 "playfab_id": "$player.playfab_id",
                 "times_killed": "$kills.v",
+                "killer_name": 1,
             }
         },
         {"$sort": {"times_killed": -1}},

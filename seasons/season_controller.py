@@ -32,7 +32,11 @@ class SeasonWatch(reactivex.Observer[SeasonEvent]):
         self._season_config = initial_config
 
     def on_next(self, value: SeasonEvent):
-        if value == SeasonEvent.UPDATE or value == SeasonEvent.CREATE:
+        if (
+            value == SeasonEvent.UPDATE
+            or value == SeasonEvent.CREATE
+            or value == SeasonEvent.START
+        ):
             asyncio.create_task(self.load_config())
         elif value == SeasonEvent.END:
             asyncio.create_task(self.on_season_end())
@@ -50,7 +54,9 @@ class SeasonWatch(reactivex.Observer[SeasonEvent]):
             if not self._season_config.start_date:
                 raise ValueError("Unable to end a season that has not started")
             top_20_items: list[dict] = (
-                await self._kills_collection.find()
+                await self._kills_collection.find(
+                    {f"season.{self._season_config.name}": {"$exists": True}}
+                )
                 .sort(f"season.{self._season_config.name}.kill_count", -1)
                 .limit(20)
                 .to_list()

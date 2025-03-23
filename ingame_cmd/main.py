@@ -3,10 +3,10 @@ from reactivex import Observer
 
 from common.compute import compute_gate_text, compute_next_gate_text, compute_time_txt
 from common.models import ChatEvent
-from config_client.models import PtConfig
+from config_client.models import PtConfig, SeasonConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
-from rank_compute.kills import get_kills
+from rank_compute.kills import get_kills, get_season_kills
 from rank_compute.playtime import get_playtime
 from rcon.rcon import RconContext
 
@@ -59,7 +59,7 @@ class IngameCommands(Observer[ChatEvent | None]):
         user_kdr = await get_kills(playfab_id, self._kills_collection)
         full_msg: str = ""
         if user_kdr is None:
-            full_msg = f"{user_name} has no recorded playtime"
+            full_msg = f"{user_name} has no recorded kdr"
         else:
             rank_cmp = user_kdr.rank + 1 if user_kdr.rank is not None else "N/A"
             full_msg = f"{user_kdr.user_name} is KDR RANKED {rank_cmp}\nKills {user_kdr.kill_count} | Deaths {user_kdr.death_count} | Ratio {user_kdr.ratio} "
@@ -81,6 +81,31 @@ class IngameCommands(Observer[ChatEvent | None]):
         async with RconContext() as client:
             await client.execute(f"say {full_msg}")
 
+    async def handle_skdr(self, playfab_id: str, user_name: str):
+        full_msg: str = ""
+        exists = await SeasonConfig.aexists()
+        if not exists:
+            full_msg = "No active season"
+        season_cfg = await SeasonConfig.aload()
+        if not season_cfg.is_active:
+            full_msg = "No active season"
+        if not full_msg:
+            user_kdr = await get_season_kills(
+                playfab_id, self._kills_collection, season_cfg
+            )
+            if user_kdr is None:
+                full_msg = f"{user_name} has no recorded season kdr"
+            else:
+                rank_cmp = user_kdr.rank + 1 if user_kdr.rank is not None else "N/A"
+                full_msg = (
+                    f"{user_kdr.user_name} is KDR RANKED {rank_cmp} in "
+                    f"{season_cfg.embed_config.title or season_cfg.name}\n"
+                    f"Kills {user_kdr.kill_count} | Deaths {user_kdr.death_count} | "
+                    f"Ratio {user_kdr.ratio} "
+                )
+        async with RconContext() as client:
+            await client.execute(f"say {full_msg}")
+
     def on_next(self, event_data: ChatEvent | None) -> None:
         if not event_data:
             return
@@ -95,6 +120,8 @@ class IngameCommands(Observer[ChatEvent | None]):
             asyncio.create_task(self.handle_rank(playfab_id, user_name))
         elif message == ".kdr":
             asyncio.create_task(self.handle_kdr(playfab_id, user_name))
+        elif message == ".skdr":
+            asyncio.create_task(self.handle_skdr(playfab_id, user_name))
         elif message.startswith(".versus") or message.startswith(".vs"):
             split_versus = message.split(" ", 1)
             if len(split_versus) < 2:

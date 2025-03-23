@@ -373,21 +373,23 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 
 ### Commands
 
-- **kdr**: gets kdr score for player
-  - usage: `.kdr <playfab_id_or_username>`
 - **playtime**: gets playtime score for player
   - usage: `.playtime <playfab_id_or_username>`
-- **versus**: shows battle tally between two players, as in how many times they've killed each other
-  - usage: `.versus <playfab_id_or_username> <playfab_id_or_username>`
+- **playerlist**: shows online players list
 - **skdr**: gets current seasion kdr score for player
   - usage: `.skdr <playfab_id_or_username>`
-- **boards**: Boards admin commands
 - **db**: DB admin commands
+- **pt**: Persitent titles config commands
+- **boards**: Boards admin commands
+- **kdr**: gets kdr score for player
+  - usage: `.kdr <playfab_id_or_username>`
+- **kills**: shows players killed by arg player, use commands such as .kdr or .playtime to obtain playfab id if needed
+  - usage: `.kills <playfab_id>`
+- **season**: Season admin commands
 - **help**: get help about a command, or use without any command to get help about all commands
   - usage: `.help <optional_command>`
-- **pt**: Persitent titles config commands
-- **playerlist**: shows online players list
-- **season**: Season admin commands
+- **versus**: shows battle tally between two players, as in how many times they've killed each other
+  - usage: `.versus <playfab_id_or_username> <playfab_id_or_username>`
 - **say**: send message to ingame chat (this command will only work in the chat_logs channel)
   - usage: `.say <message>`
   - example: `.say ay yo, it's ya boi from discord comming at you with a new message`

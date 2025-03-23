@@ -2,8 +2,8 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
 
-from common import parsers
 from common.models import KillScore
+from common import parsers
 import re
 from config_client.models import SeasonConfig
 from pymongo import UpdateOne
