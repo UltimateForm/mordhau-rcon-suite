@@ -109,4 +109,4 @@ def transform_kill_record_to_db(
 
 
 def is_playfab_id_format(arg: str):
-    return re.search(r"^([\S]{15,16})+$", arg) is not None
+    return re.search(r"^([\S]{14,16})+$", arg) is not None

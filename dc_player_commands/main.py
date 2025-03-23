@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext.commands import Bot, Context
 from common import logger, parsers
-from common.compute import make_ordinal
+from common.compute import make_ordinal, split_chunks
 from common.discord import make_embed as common_make_embed
 from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
@@ -13,6 +13,7 @@ from rank_compute.kills import get_kills, get_season_kills
 from config_client.models import SeasonConfig
 import re
 from db_kills import aggregation
+from discord.ext.pages import Paginator, Page
 
 
 def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
@@ -214,10 +215,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
 
     async def kills(ctx: Context, playfab_id: str):
         collection = db["kills"]
-        embed = make_embed(ctx)
-        embed.color = 0x080808
         try:
-            embed.description = f"Players killed by {playfab_id}"
             killed_str: str = ""
             async for player in collection.aggregate(
                 aggregation.get_killed_players_pipeline(playfab_id)
@@ -228,12 +226,24 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 killed_str += (
                     f"{killed_name} ({killed_playfab_id}): {times_killed} times\n"
                 )
-            embed.description += "```\n" + killed_str + "```"
+            chunks = split_chunks(killed_str, 1000 - len("```\n```"))
+            pages: list[Page] = []
+            for chunk in chunks:
+                chunk_embed = make_embed(ctx)
+                chunk_embed.color = 0xFFFC2E
+                chunk_embed.description = (
+                    f"Players killed by {playfab_id}\n```\n{chunk}```"
+                )
+                pages.append(Page(embeds=[chunk_embed]))
+            paginator = Paginator(pages)
+            await paginator.send(ctx)
+
         except Exception as e:
-            embed.add_field(name="Success", value=str(False), inline=False)
-            embed.add_field(name="Error", value=str(e), inline=False)
-            embed.color = 15548997
-        await ctx.message.reply(embed=embed)
+            error_embed = make_embed(ctx)
+            error_embed.add_field(name="Success", value=str(False), inline=False)
+            error_embed.add_field(name="Error", value=str(e), inline=False)
+            error_embed.color = 15548997  # red
+            await ctx.message.reply(embed=error_embed)
 
     bot.command(
         "kills", description="shows players killed by arg player", usage="<playfab_id>"
