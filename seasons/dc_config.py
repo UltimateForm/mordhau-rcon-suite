@@ -58,8 +58,8 @@ class SeasonAdminCommands(commands.Cog):
             season = await SeasonConfig.aload()
             embed.add_field(name="Name", value=season.name)
             embed.add_field(name="Creation date", value=season.created_date)
-            embed.add_field(name="Active", value=season.is_active)
-            embed.add_field(name="Channel", value=season.channel)
+            embed.add_field(name="Active", value=str(season.is_active))
+            embed.add_field(name="Channel", value=str(season.channel))
             exclude_players_txt = (
                 "\n".join(season.exclude) if season.exclude else "None"
             )
@@ -69,7 +69,7 @@ class SeasonAdminCommands(commands.Cog):
                 inline=False,
             )
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -99,7 +99,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply(f"Season {name} created")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -120,7 +120,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply("Deleted")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -142,7 +142,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply("Updated")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -164,7 +164,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply(f"Added {playfab_ids} to {season.name} excluded players")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -190,7 +190,7 @@ class SeasonAdminCommands(commands.Cog):
             )
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -222,7 +222,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply(":saluting_face:")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -244,7 +244,7 @@ class SeasonAdminCommands(commands.Cog):
             await ctx.reply(":saluting_face:")
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -280,7 +280,7 @@ class SeasonAdminCommands(commands.Cog):
             sc.SEASON_TOPIC.on_next(sc.SeasonEvent.UPDATE)
         except Exception as e:
             embed = self.make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)

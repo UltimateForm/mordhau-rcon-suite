@@ -6,6 +6,7 @@ from common.compute import (
     compute_time_txt,
     slice_text_array_at_total_length,
     split_chunks,
+    human_format,
 )
 
 
@@ -202,3 +203,33 @@ this line is at up to length 099
     chunks = split_chunks(sample_text, 1000)
     assert len(chunks) == 1
     assert chunks[0].splitlines()[-1] == "this line is at up to length 099"
+
+
+def test_human_format_thousands():
+    assert human_format(1000) == "1K"
+    assert human_format(1500) == "1.5K"
+    assert human_format(999999) == "999.9K"
+
+
+def test_human_format_millions():
+    assert human_format(1000000) == "1M"
+    assert human_format(2500000) == "2.5M"
+    assert human_format(999999999) == "999.9M"
+
+
+def test_human_format_billions():
+    assert human_format(1000000000) == "1G"
+    assert human_format(1500000000) == "1.5G"
+    assert human_format(999999999999) == "999.9G"
+
+
+def test_human_format_trillions():
+    assert human_format(1000000000000) == "1T"
+    assert human_format(2500000000000) == "2.5T"
+    assert human_format(999999999999999) == "1P"
+
+
+def test_human_format_small_numbers():
+    assert human_format(1) == "1"
+    assert human_format(999) == "999"
+    assert human_format(0) == "0"

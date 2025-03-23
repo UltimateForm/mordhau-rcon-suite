@@ -86,12 +86,28 @@ def slice_text_array_at_total_length(max: int, texts: list[str]) -> list[list[st
     return new_list
 
 
+def custom_format(number: float, precision: int):
+    if number == 0:
+        return "0"
+    elif number < 1:
+        return f"{number:.{precision}f}".rstrip("0").rstrip(".")
+    else:
+        integer_part = int(number)
+        decimal_part = number - integer_part
+        if decimal_part == 0:
+            return str(integer_part)
+        else:
+            return f"{integer_part}.{str(decimal_part)[2:precision+2]}"
+
+
 def human_format(number: int):
+    if number == 0:
+        return "0"
     units = ["", "K", "M", "G", "T", "P"]
     k = 1000.0
     magnitude = int(math.floor(math.log(number, k)))
-    value = str(round(number / k**magnitude, 1)).removesuffix(r".0")
-    return value + units[magnitude]
+    formatted_number = custom_format(number / k**magnitude, 1)
+    return "{}{}".format(formatted_number, units[magnitude])
 
 
 # source https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement

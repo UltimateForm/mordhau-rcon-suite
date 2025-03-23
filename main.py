@@ -68,13 +68,18 @@ class MordhauRconSuite:
     def kills_collection(self):
         return self._database["kills"]
 
-    def __init__(self, bot_config: BotConfig, pt_config: PtConfig):
+    def __init__(
+        self,
+        bot_config: BotConfig,
+        pt_config: PtConfig,
+        loop: asyncio.AbstractEventLoop,
+    ):
         self._bot_config = bot_config
         self._pt_config = pt_config
         if SeasonConfig.exists():
             self._initial_season_cfg = SeasonConfig.load()
         self.set_up_db()
-        self.set_up_discord()
+        self.set_up_discord(loop)
         if self._bot_config.experimental_bulk_listener:
             self.set_up_bulk_listeners()
         else:
@@ -151,7 +156,8 @@ class MordhauRconSuite:
                 self._bot_config.info_refresh_time,
             )
             cogs.append(info_board)
-        self.tasks.update([self._dc_bot.add_cog(cog) for cog in cogs])
+        for cog in cogs:
+            self._dc_bot.add_cog(cog)
 
     def set_up_experiences(self):
         self.player_store = PlayerStore()
@@ -218,29 +224,27 @@ class MordhauRconSuite:
         db_client = AsyncIOMotorClient(db_connection)
         self._database = db_client[db_name]
 
-    def set_up_discord(self):
+    def set_up_discord(self, loop: asyncio.AbstractEventLoop):
         self._dc_bot = Bot(
-            command_prefix=".", intents=common_intents, help_command=None
+            command_prefix=".", intents=common_intents, help_command=None, loop=loop
         )
         d_token = self._bot_config.d_token
-        self._dc_client = ObservableDiscordClient(intents=common_intents)
+        self._dc_client = ObservableDiscordClient(intents=common_intents, loop=loop)
         register_dc_player_commands(self._dc_bot, self._database)
+        self._dc_bot.add_cog(
+            DcDbConfig(
+                self._dc_bot,
+                self._bot_config,
+                self.playtime_collection,
+                self.kills_collection,
+            )
+        ),
+        self._dc_bot.add_cog(BotHelper(self._dc_bot, self._bot_config)),
+        self._dc_bot.add_cog(SeasonAdminCommands(self._dc_bot, self._bot_config)),
         self.tasks.update(
             [
                 self._dc_bot.start(token=d_token),
                 self._dc_client.start(token=d_token),
-                self._dc_bot.add_cog(
-                    DcDbConfig(
-                        self._dc_bot,
-                        self._bot_config,
-                        self.playtime_collection,
-                        self.kills_collection,
-                    )
-                ),
-                self._dc_bot.add_cog(BotHelper(self._dc_bot, self._bot_config)),
-                self._dc_bot.add_cog(
-                    SeasonAdminCommands(self._dc_bot, self._bot_config)
-                ),
             ]
         )
 
@@ -306,6 +310,10 @@ class MordhauRconSuite:
 if __name__ == "__main__":
     logger.use_date_time_logger()
     logger.info("INIT")
-    suite = MordhauRconSuite(b_config, p_config)
-    asyncio.run(suite.start())
+    loop = asyncio.get_event_loop()
+    asyncio.set_event_loop(loop)
+    suite = MordhauRconSuite(b_config, p_config, loop)
+    loop.run_until_complete(suite.start())
     logger.info("END")
+    loop.close()
+    asyncio.set_event_loop(None)

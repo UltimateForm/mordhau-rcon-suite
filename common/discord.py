@@ -1,3 +1,4 @@
+import asyncio
 from typing import Iterable
 from discord.ext import commands
 import discord
@@ -61,8 +62,8 @@ def make_season_embed(season_config: SeasonConfig):
 
 
 class ObservableDiscordClient(discord.Client, Subject[discord.Client]):
-    def __init__(self, intents: discord.Intents):
-        discord.Client.__init__(self, intents=intents)
+    def __init__(self, intents: discord.Intents, loop: asyncio.AbstractEventLoop):
+        discord.Client.__init__(self, intents=intents, loop=loop)
         Subject.__init__(self)
 
     async def on_ready(self):
@@ -85,7 +86,7 @@ class BotHelper(commands.Cog):
         cmds_lines: list[str] = []
         for cmd in cmds:
             if len(cmd.checks):
-                check_pass = any(checker(ctx) for checker in cmd.checks)
+                check_pass = any(checker(ctx) for checker in cmd.checks)  # type: ignore
                 if not check_pass:
                     continue
             cmd_head = f"- **{cmd.name}**"
@@ -128,7 +129,7 @@ class BotHelper(commands.Cog):
                 await ctx.reply(f"{target} is not a known command or command group")
                 return
             if len(cmd.checks):
-                check_pass = any(checker(ctx) for checker in cmd.checks)
+                check_pass = any(checker(ctx) for checker in cmd.checks)  # type: ignore
                 if not check_pass:
                     await ctx.reply(f"{target} is not a known command or command group")
                     return
@@ -144,4 +145,4 @@ class BotHelper(commands.Cog):
             cmds_lines.append(
                 "\nSource code https://github.com/UltimateForm/mordhau-rcon-suite"
             )
-        await ctx.reply(content="\n".join(cmds_lines), suppress_embeds=True)
+        await ctx.reply(content="\n".join(cmds_lines), suppress=True)

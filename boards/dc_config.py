@@ -68,10 +68,10 @@ class BoardCommands(commands.Cog):
         try:
             board = self.get_board_cog(board_name)
             board.announcement = " ".join(announce)
-            embed.add_field(name="Success", value=True)
+            embed.add_field(name="Success", value=str(True))
             await ctx.reply(embed=embed)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -90,10 +90,10 @@ class BoardCommands(commands.Cog):
         try:
             board = self.get_board_cog(board_name)
             await board.start(board._client)
-            embed.add_field(name="Success", value=True)
+            embed.add_field(name="Success", value=str(True))
             await ctx.reply(embed=embed)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)

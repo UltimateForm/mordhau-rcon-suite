@@ -131,10 +131,10 @@ class SeasonScoreboard(Board):
         embed.set_footer(
             text=(
                 footer_txt + "\n" + embed.footer.text
-                if embed.footer.text
+                if embed.footer and embed.footer.text
                 else footer_txt
             ),
-            icon_url=embed.footer.icon_url,
+            icon_url=embed.footer.icon_url if embed.footer else None,
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)

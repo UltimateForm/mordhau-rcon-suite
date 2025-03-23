@@ -42,9 +42,9 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.add_field(name="PlayfabId", value=kill_score.player_id)
             embed.add_field(name="Username", value=kill_score.user_name)
             embed.add_field(name=chr(173), value=chr(173))
-            embed.add_field(name="Kills", value=kill_score.kill_count)
-            embed.add_field(name="Deaths", value=kill_score.death_count)
-            embed.add_field(name="Ratio", value=kill_score.ratio or "-")
+            embed.add_field(name="Kills", value=str(kill_score.kill_count))
+            embed.add_field(name="Deaths", value=str(kill_score.death_count))
+            embed.add_field(name="Ratio", value=str(kill_score.ratio) or "-")
             if len(kill_score.achievements):
                 embed.add_field(name="", value="\n")
                 embed.add_field(
@@ -61,7 +61,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         except Exception as e:
             logger.error(str(e))
             embed = make_embed(ctx)
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -91,16 +91,18 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             )
             embed.title = season_cfg.embed_config.title
             embed.description = season_cfg.embed_config.description
-            embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
+            # why the hell am i doing this
+            if embed.footer:
+                embed.set_footer(text=embed.footer.text, icon_url=embed.footer.icon_url)
             embed.color = 15844367
             embed.add_field(name="PlayfabId", value=kill_score.player_id)
             embed.add_field(name="Username", value=kill_score.user_name)
             embed.add_field(name=chr(173), value=chr(173))
-            embed.add_field(name="Kills", value=kill_score.kill_count)
-            embed.add_field(name="Deaths", value=kill_score.death_count)
-            embed.add_field(name="Ratio", value=kill_score.ratio or "-")
+            embed.add_field(name="Kills", value=str(kill_score.kill_count))
+            embed.add_field(name="Deaths", value=str(kill_score.death_count))
+            embed.add_field(name="Ratio", value=str(kill_score.ratio or "-"))
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -128,7 +130,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 name="Time played", value=player_score.time_txt, inline=False
             )
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -158,7 +160,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             await ctx.reply("```" + players_text + "```")
             return
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -189,16 +191,16 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             player1_kills: dict = player1_data.get("kills", {})
             player2_kills: dict = player2_data.get("kills", {})
             embed.add_field(
-                name=player1_data.get("user_name"),
+                name=player1_data.get("user_name", "None"),
                 value=player1_kills.get(player2_id, 0),
             )
             embed.add_field(name=":vs:", value="")
             embed.add_field(
-                name=player2_data.get("user_name"),
+                name=player2_data.get("user_name", "None"),
                 value=player2_kills.get(player1_id, 0),
             )
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -228,7 +230,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 )
             embed.description += "```\n" + killed_str + "```"
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997
         await ctx.message.reply(embed=embed)

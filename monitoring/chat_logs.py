@@ -53,7 +53,7 @@ class ChatLogs(Observer[ChatEvent | None]):
             await ctx.message.add_reaction("👌")
         except Exception as e:
             embed = make_embed(str(ctx.command), color=discord.Colour(15548997))
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             await ctx.message.reply(embed=embed)
 

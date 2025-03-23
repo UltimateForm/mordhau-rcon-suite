@@ -64,10 +64,10 @@ class DcDbConfig(commands.Cog):
                 raise Exception(
                     f"One or more collections failed to update.\n- Playtime matched players: {update_playtime.modified_count}\n- Kills matched players: {update_kills.modified_count}"
                 )
-            embed.add_field(name="Success", value=True)
+            embed.add_field(name="Success", value=str(True))
             await ctx.reply(embed=embed)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
@@ -99,7 +99,7 @@ class DcDbConfig(commands.Cog):
 
             await ctx.reply(embed=embed)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)

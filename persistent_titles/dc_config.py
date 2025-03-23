@@ -44,9 +44,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
                 )
             pt_config.tag_format = arg_format
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -66,9 +66,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
         try:
             pt_config.salute_timer = arg_timer
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -88,9 +88,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
         try:
             pt_config.tags[arg_playfab_id] = arg_tag
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -118,9 +118,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
             if not pt_config.rename:
                 pt_config.rename = rename_cfg
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -136,14 +136,14 @@ def register_cfg_dc_commands(bot: commands.Bot):
         if bot_channel and ctx.channel.id != bot_channel:
             return
         embed = make_embed(ctx)
-        embed.add_field(name="Min minutes played", value=arg_minutes)
+        embed.add_field(name="Min minutes played", value=str(arg_minutes))
         embed.add_field(name="Tag", value=arg_tag)
         try:
             pt_config.playtime_tags[str(arg_minutes)] = arg_tag
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -169,9 +169,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
             embed.add_field(name="RemovedTag", value=current_tag)
             pt_config.tags.pop(arg_playfab_id, None)
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -202,9 +202,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
             if not pt_config.rename:
                 pt_config.rename = rename_cfg
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -230,9 +230,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
             embed.add_field(name="RemovedTag", value=current_tag)
             pt_config.playtime_tags.pop(arg_minutes, None)
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -253,9 +253,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
         try:
             pt_config.salutes[arg_playfab_id] = arg_salute
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -281,9 +281,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
             embed.add_field(name="RemovedSalute", value=current_salute, inline=False)
             pt_config.salutes.pop(arg_playfab_id, None)
             pt_config.save()
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed)
@@ -314,9 +314,9 @@ def register_cfg_dc_commands(bot: commands.Bot):
                 value=json_code if not too_long else "Too long, sent separately",
                 inline=False,
             )
-            embed.add_field(name="Success", value=True, inline=False)
+            embed.add_field(name="Success", value=str(True), inline=False)
         except Exception as e:
-            embed.add_field(name="Success", value=False, inline=False)
+            embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
             embed.color = 15548997  # red
         await ctx.message.reply(embed=embed, content=json_code if too_long else None)

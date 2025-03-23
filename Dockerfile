@@ -5,7 +5,7 @@ WORKDIR /bot
 COPY ./Pipfile .
 
 COPY ./.env* .
-     
+
 RUN pip install pipenv
 
 RUN pipenv install
@@ -42,4 +42,4 @@ ADD ./main.py ./
 
 ADD ./dc_db_config/* ./dc_db_config
 
-CMD ["pipenv", "run", "python", "main.py"]
+CMD ["pipenv", "run", "python", "-u", "main.py"]
