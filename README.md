@@ -510,7 +510,32 @@ Example board with random usernames:
 
 ##### Seasonal kill records
 
-The default kdr boards is a persistent one which might leave new players out of board forever unless older players stop playing. To keep the competition fresh you can add seasonal leaderboards have limited time and start counting from 0. Below are the steps for configring a season.
+The default KDR board is a persistent one, which might leave new players out of the board forever unless older players stop playing. To keep the competition fresh, you can add seasonal leaderboards that have a limited time and start counting from 0. Below are the steps for configuring a season.
+
+The command examples will use example arguments. You will want to replace the arguments to match your desired season configuration.
+
+1. create season 
+   - `.season kdr SeasonName` Replace "SeasonName" with your chosen name. The name must not contain spaces
+2. set discord channel for the season leaderboard
+   - `.season channel 3125613635231412341` Replace the numbers with the channel ID of the channel where you want the season leaderboard posted
+3. configure season leaderboard
+   - `.season embed title "Season Name"` by default the leaderboard will have the name you configured in step 1. This command allows you to customize it further. See the name from step 1 more like an "id" than an actual presentation name
+   - `.season embed description "This is the season description"` by default the leaderboard embed will have no description. You can use this command to set one
+   - `.season embed image_url https://i.imgur.com/zSJgfAT.jpeg` this will set an image to be shown on the leaderboard
+   - `.season embed footer_txt "Some text you want to show at the bottom of the leaderboard"` you can use this command to set some text under the leaderboard
+4. inspect season info
+   - `.season info` this will output info about your currently configured season
+5. start season
+   - `.season start`
+
+After these steps the bot will send the board to your configured channel in step 2 and start tracking player kills.
+
+To conclude a season:
+
+1. end the season
+   - `.season end` this will also update achievements for players who participated
+2. delete the season
+   - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
 
 ## IMPORTANT NOTES
 1. This bot doesn't use (yet) the native discord commands
