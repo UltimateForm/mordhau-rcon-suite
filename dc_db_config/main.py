@@ -60,9 +60,9 @@ class DcDbConfig(commands.Cog):
             )
             update_kills = await self._kills_collection.bulk_write([update])
             update_playtime = await self._playtime_collection.bulk_write([update])
-            if update_kills.matched_count < 1 or update_playtime.matched_count < 1:
+            if update_kills.modified_count < 1 or update_playtime.modified_count < 1:
                 raise Exception(
-                    f"One or more collections failed to update.\n- Playtime matched players: {update_playtime.matched_count}\n- Kills matched players: {update_kills.matched_count}"
+                    f"One or more collections failed to update.\n- Playtime matched players: {update_playtime.modified_count}\n- Kills matched players: {update_kills.modified_count}"
                 )
             embed.add_field(name="Success", value=str(True))
             await ctx.reply(embed=embed)

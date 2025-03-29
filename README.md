@@ -2,11 +2,15 @@
 
 ![botimage](public/rconsuite.png)
 
+![botimage](public/rconsuite.png)
+
 This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which adds the following new features:
 - recording kills
   - and broadcasting killstreaks
 - sending scoreboards to discord
   - kills
+    - including seasonal leaderboards
+    - including achievements
     - including seasonal leaderboards
     - including achievements
   - playtime
@@ -58,6 +62,7 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
         - [Seasonal kill records](#seasonal-kill-records)
+        - [Seasonal kill records](#seasonal-kill-records-1)
   - [IMPORTANT NOTES](#important-notes)
 
 ## Setup
@@ -90,10 +95,15 @@ Here's how the config is loaded:
     7. PLAYTIME_REFRESH_TIME (optional, time interval in seconds for playtime scoreboard update)
     8. KILLS_CHANNEL (optional, channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
     9. KILLS_REFRESH_TIME (optional, time interval in seconds for kills/death/ratio scoreboard update)
+    6. PLAYTIME_CHANNEL (optional, channel to post playtime scoreboard, read more at [boards](#boards))
+    7. PLAYTIME_REFRESH_TIME (optional, time interval in seconds for playtime scoreboard update)
+    8. KILLS_CHANNEL (optional, channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
+    9. KILLS_REFRESH_TIME (optional, time interval in seconds for kills/death/ratio scoreboard update)
     10. INFO_CHANNEL (optional, channel to post server info)
     11. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
     12. D_TOKEN (discord bot auth token)
     13. TITLE (optional)
+    14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to admin commands, check [this section](#commands))
     14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to admin commands, check [this section](#commands))
     15. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
     16. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
@@ -351,6 +361,7 @@ If you have the setting chat logs enabled (refer back to [configuration chapter]
 If someone writes @admin as part of their chat message the bot will mention @here in the discord channel.
 
 Check [commands](#commands) for how to use the `say` command which will send messages from discord into game.
+Check [commands](#commands) for how to use the `say` command which will send messages from discord into game.
 
 
 ## Ingame commands
@@ -444,8 +455,8 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 #### Admin Season config commands (.season)
 
 - **channel_id**: set channel (by id) to send season score board
-  - usage: `.season channel <channel_id>`
-  - example: `.season channel 2912891271860`
+  - usage: `.season channel_id <channel_id>`
+  - example: `.season channel_id 2912891271860`
 - **delete**: delete configured season
 - **info**: get info about current configured season
 - **create**: create season, currently only supported season_type is `kdr`, name should not have spaces 
@@ -507,6 +518,35 @@ Example board with random usernames:
 ║  3          f954c2dd45f76295        22   11   2.0  ║
 ╚════════════════════════════════════════════════════╝
 ```
+
+##### Seasonal kill records
+
+The default KDR board is a persistent one, which might leave new players out of the board forever unless older players stop playing. To keep the competition fresh, you can add seasonal leaderboards that have a limited time and start counting from 0. Below are the steps for configuring a season.
+
+The command examples will use example arguments. You will want to replace the arguments to match your desired season configuration.
+
+1. create season 
+   - `.season kdr SeasonName` Replace "SeasonName" with your chosen name. The name must not contain spaces
+2. set discord channel for the season leaderboard
+   - `.season channel 3125613635231412341` Replace the numbers with the channel ID of the channel where you want the season leaderboard posted
+3. configure season leaderboard
+   - `.season embed title "Season Name"` by default the leaderboard will have the name you configured in step 1. This command allows you to customize it further. See the name from step 1 more like an "id" than an actual presentation name
+   - `.season embed description "This is the season description"` by default the leaderboard embed will have no description. You can use this command to set one
+   - `.season embed image_url https://i.imgur.com/zSJgfAT.jpeg` this will set an image to be shown on the leaderboard
+   - `.season embed footer_txt "Some text you want to show at the bottom of the leaderboard"` you can use this command to set some text under the leaderboard
+4. inspect season info
+   - `.season info` this will output info about your currently configured season
+5. start season
+   - `.season start`
+
+After these steps the bot will send the board to your configured channel in step 2 and start tracking player kills.
+
+To conclude a season:
+
+1. end the season
+   - `.season end` this will also update achievements for players who participated
+2. delete the season
+   - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
 
 ##### Seasonal kill records
 
