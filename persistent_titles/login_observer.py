@@ -7,7 +7,7 @@ from config_client.models import PtConfig
 from rcon.rcon import RconContext
 
 
-class LoginObserver(Observer[LoginEvent]):
+class LoginObserver(Observer[LoginEvent | None]):
     _config: PtConfig
     playtime_client: PlaytimeClient | None
 
@@ -22,6 +22,8 @@ class LoginObserver(Observer[LoginEvent]):
         return self._config.tag_format.format(tag)
 
     def get_rename(self, playfab_id: str):
+        if not self._config.rename:
+            return None
         rename = self._config.rename.get(playfab_id, None)
         return rename
 
@@ -67,7 +69,7 @@ class LoginObserver(Observer[LoginEvent]):
             async with RconContext() as client:
                 await client.execute(f"renameplayer {playfab_id} {rename}")
 
-    def on_next(self, event_data: LoginEvent) -> None:
+    def on_next(self, event_data: LoginEvent | None) -> None:
         if not event_data:
             return
         order = event_data.instance.lower()

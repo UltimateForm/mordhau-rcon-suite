@@ -1,5 +1,4 @@
 import logging
-import logging.handlers
 
 
 def use_date_time_logger():

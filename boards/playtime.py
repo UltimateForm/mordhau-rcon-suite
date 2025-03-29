@@ -12,19 +12,27 @@ from common.discord import make_embed
 
 
 class PlayTimeScoreboard(Board):
-    _playtime_collection: AsyncIOMotorCollection | None
+    _playtime_collection: AsyncIOMotorCollection
 
     @property
     def file_path(self) -> str:
         return "./persist/playtime_msg_id"
 
     def __init__(
-        self, playtime_collection: AsyncIOMotorCollection, channel_id, time_interval=60
+        self,
+        client: discord.Client,
+        playtime_collection: AsyncIOMotorCollection,
+        channel_id,
+        time_interval: int | None = 60,
     ):
         self._playtime_collection = playtime_collection
-        super().__init__(channel_id, time_interval)
+        super().__init__(client, channel_id, time_interval)
 
     async def send_board(self):
+        if not self._channel:
+            raise ValueError(
+                "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+            )
         top_20_items: list[dict] = (
             await self._playtime_collection.find()
             .sort("minutes", -1)
@@ -51,7 +59,7 @@ class PlayTimeScoreboard(Board):
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
         embed = make_embed(
             ":clock4: PLAYTIME RECORDS (top 20) :clock4:",
-            description=time_sig + "\n" + ascii_table,
+            description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
             color=discord.Colour(5763719),
             footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}\nUnknown players will be shown by playfab id only, login and logout to capture username",
         )

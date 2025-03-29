@@ -1,30 +1,33 @@
 import numpy as np
 from itertools import takewhile
+import math
 
 
-def compute_gate(value: int, gates: list[int]) -> int:
+def compute_gate(value: int, gates: list[int]) -> int | None:
     # todo: ditch numpy alltogether
     # we could sort it by highest and then do next([x for x in keys if x <= minutes_played])
-    gates = np.array(gates)
-    lesser_gates = gates[gates <= value]
+    np_gates = np.array(gates)
+    lesser_gates = np_gates[np_gates <= value]
     if len(lesser_gates) == 0:
         return None
     current_gate = lesser_gates.max()
     return current_gate
 
 
-def compute_next_gate(value: int, gates: list[int]) -> int:
+def compute_next_gate(value: int, gates: list[int]) -> int | None:
     # todo: ditch numpy alltogether
     # we could sort it by highest and then do next([x for x in keys if x <= minutes_played])
-    gates = np.array(gates)
-    lesser_gates = gates[gates > value]
+    np_gates = np.array(gates)
+    lesser_gates = np_gates[np_gates > value]
     if len(lesser_gates) == 0:
         return None
     next_gate = lesser_gates.min()
     return next_gate
 
 
-def compute_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
+def compute_gate_text(
+    value: int, gates: dict[str, str]
+) -> tuple[int | None, str | None]:
     gates_keys = list(gates.keys())
     gates_thresholds = list([int(key) for key in gates_keys if key.isnumeric()])
     current_gate = compute_gate(value, gates_thresholds)
@@ -32,7 +35,9 @@ def compute_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
     return (current_gate, gate_txt)
 
 
-def compute_next_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]:
+def compute_next_gate_text(
+    value: int, gates: dict[str, str]
+) -> tuple[int | None, str | None]:
     gates_keys = list(gates.keys())
     gates_thresholds = list([int(key) for key in gates_keys if key.isnumeric()])
     next_gate = compute_next_gate(value, gates_thresholds)
@@ -41,7 +46,7 @@ def compute_next_gate_text(value: int, gates: dict[str, str]) -> tuple[int, str]
 
 
 # TODO: use compute_next_gate instead of the inline if statements
-def compute_time_txt(minutes: int):
+def compute_time_txt(minutes: float):
     is_less_than_hour = minutes < 60
     is_less_than_minute = minutes < 1
     unit = "secs" if is_less_than_minute else "mins" if is_less_than_hour else "hours"
@@ -79,3 +84,52 @@ def slice_text_array_at_total_length(max: int, texts: list[str]) -> list[list[st
         cursor += len(chunk)
         new_list.append(chunk)
     return new_list
+
+
+def custom_format(number: float, precision: int):
+    if number == 0:
+        return "0"
+    elif number < 1:
+        return f"{number:.{precision}f}".rstrip("0").rstrip(".")
+    else:
+        integer_part = int(number)
+        decimal_part = number - integer_part
+        if decimal_part == 0:
+            return str(integer_part)
+        else:
+            return f"{integer_part}.{str(decimal_part)[2:precision+2]}"
+
+
+def human_format(number: int):
+    if number == 0:
+        return "0"
+    units = ["", "K", "M", "G", "T", "P"]
+    k = 1000.0
+    magnitude = int(math.floor(math.log(number, k)))
+    formatted_number = custom_format(number / k**magnitude, 1)
+    return "{}{}".format(formatted_number, units[magnitude])
+
+
+# source https://stackoverflow.com/questions/9647202/ordinal-numbers-replacement
+def make_ordinal(n: int) -> str:
+    if 11 <= (n % 100) <= 13:
+        suffix = "th"
+    else:
+        suffix = ["th", "st", "nd", "rd", "th"][min(n % 10, 4)]
+    return str(n) + suffix
+
+
+def split_chunks(sample: str, chunk_size: int) -> list[str]:
+    lines = sample.splitlines()
+    batches: list[str] = []
+    while lines:
+        curr = lines.pop(0) + "\n"
+        if not batches:
+            batches.append(curr)
+        else:
+            new_len = len(batches[-1] + curr)
+            if new_len <= chunk_size:
+                batches[-1] += curr
+            else:
+                batches.append(curr)
+    return batches

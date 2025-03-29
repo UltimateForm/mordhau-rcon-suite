@@ -14,11 +14,11 @@ from discord.ext.commands import Bot
 
 class PersistentTitles:
     login_observer: LoginObserver
-    _login_observable: Observable[LoginEvent]
+    _login_observable: Observable[LoginEvent | None]
 
     def __init__(
         self,
-        login_observable: Observable[LoginEvent],
+        login_observable: Observable[LoginEvent | None],
         bot: Bot | None = None,
         playtime_collection: AsyncIOMotorCollection | None = None,
         live_sessions_collection: AsyncIOMotorCollection | None = None,
@@ -30,15 +30,17 @@ class PersistentTitles:
             register_cfg_dc_commands(bot)
 
         playtime_client: PlaytimeClient | None = None
-        playtime_enabled = False
         if live_sessions_collection is not None and playtime_collection is not None:
             logger.info("Enabling playtime titles as DB is loaded")
             playtime_client = PlaytimeClient(playtime_collection)
-            playtime_enabled = True
         else:
             logger.info("Keeping playtime titles disabled as DB is not loaded")
         self.login_observer.playtime_client = playtime_client
-        if playtime_enabled:
+        if (
+            live_sessions_collection is not None
+            and playtime_collection is not None
+            and playtime_client is not None
+        ):
             self.enable_playtime(playtime_client, live_sessions_collection)
 
     def enable_playtime(
@@ -49,7 +51,7 @@ class PersistentTitles:
         session_topic = SessionTopic(live_sessions_collection)
         session_topic.subscribe(playtime_client)
 
-        def session_topic_login_handler(event_data: LoginEvent):
+        def session_topic_login_handler(event_data: LoginEvent | None):
             if not event_data:
                 return
             order = event_data.instance
