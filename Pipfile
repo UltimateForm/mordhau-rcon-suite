@@ -7,22 +7,25 @@ name = "mordhau-rcon-suite"
 asyncio = "*"
 pygrok = "*"
 reactivex = "*"
-"discord.py" = "*"
 dacite = "*"
 python-dotenv = "*"
 numpy = "*"
 motor = "*"
 table2ascii = "*"
 aiofiles = "*"
+py-cord = "*"
 
 [dev-packages]
 flake8 = "*"
 flake8-async = "*"
 pytest = "*"
 faker = "*"
+pyright = "*"
 
 [scripts]
 lint = "flake8"
+typecheck = "pyright"
+test = "pytest"
 
 [requires]
 python_version = "3.11.3"

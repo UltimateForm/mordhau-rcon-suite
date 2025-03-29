@@ -3,57 +3,65 @@ from reactivex import Observer, Observable
 from common.models import ChatEvent
 import discord
 from discord.ext.commands.bot import Bot
-from discord.ext.commands.context import Context
-from common.discord import make_embed
+from common.discord import channel_checker, make_embed
+from config_client.models import BotConfig
 from rcon.rcon import RconContext
 from common import logger
+from discord.ext import commands
 
 
-class ChatLogs(Observer[ChatEvent]):
-    _dc_client: discord.Client = None
-    _channel: discord.TextChannel | None = None
+class ChatLogs(Observer[ChatEvent | None]):
+    _dc_client: discord.Client
+    _channel: discord.abc.Messageable | None = None
     _channel_id: int = 0
-    _allowed_mentions: discord.AllowedMentions = None
+    _allowed_mentions: discord.AllowedMentions
 
     def __init__(
         self,
         observable_dc_client: Observable[discord.Client],
-        channel_id: int,
+        bot_config: BotConfig,
         dc_bot: Bot,
     ):
-        observable_dc_client.subscribe(
-            lambda x: asyncio.create_task(self._on_discord_ready(x))
-        )
-        self._channel_id = channel_id
+        if not bot_config.chat_logs_channel:
+            raise ValueError(
+                "ChatLogs instantiated without actual channel to send logs to"
+            )
+
+        def launch_discord_ready(x: discord.Client):
+            asyncio.create_task(self._on_discord_ready(x))
+
+        observable_dc_client.subscribe(launch_discord_ready)
+        self._channel_id = bot_config.chat_logs_channel
         self._allowed_mentions = discord.AllowedMentions(roles=True)
-        self.create_say_command(dc_bot)
+        say_cmd = dc_bot.command(
+            name="say",
+            description="send message to ingame chat",
+            usage="<message>",
+            help="ay yo, it's ya boi from discord comming at you with a new message",
+        )(self.say)
+        say_cmd.add_check(channel_checker(self._channel_id))
         super().__init__()
 
-    def create_say_command(self, dc_bot: Bot):
-        async def cmd(ctx: Context, *args: str):
-            if ctx.channel.id != self._channel_id:
-                return
-            msg = " ".join(args)
-            author = ctx.author.display_name
-            try:
-                logger.info(f"{self.__class__.__name__}: {ctx.command} '{msg}'")
-                async with RconContext() as client:
-                    r = await client.execute(f"say {author} > {msg}")
-                    logger.info(f"{self.__class__.__name__}: {r}")
-                await ctx.message.add_reaction("👌")
-            except Exception as e:
-                embed = make_embed(ctx.command, color=discord.Colour(15548997))
-                embed.add_field(name="Success", value=False, inline=False)
-                embed.add_field(name="Error", value=str(e), inline=False)
-                await ctx.message.reply(embed=embed)
-
-        dc_bot.command(
-            "say",
-        )(cmd)
+    async def say(self, ctx: commands.Context, *args: str):
+        msg = " ".join(args)
+        author = ctx.author.display_name
+        try:
+            logger.info(f"{self.__class__.__name__}: {ctx.command} '{msg}'")
+            async with RconContext() as client:
+                r = await client.execute(f"say {author} > {msg}")
+                logger.info(f"{self.__class__.__name__}: {r}")
+            await ctx.message.add_reaction("👌")
+        except Exception as e:
+            embed = make_embed(str(ctx.command), color=discord.Colour(15548997))
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(e), inline=False)
+            await ctx.message.reply(embed=embed)
 
     async def _on_discord_ready(self, dc_client: discord.Client):
         self._dc_client = dc_client
-        self._channel = await self._dc_client.fetch_channel(self._channel_id)
+        channel = await self._dc_client.fetch_channel(self._channel_id)
+        if isinstance(channel, discord.abc.Messageable):
+            self._channel = channel
 
     async def send_chat_log(self, chat_event: ChatEvent):
         if self._channel is None or chat_event is None:

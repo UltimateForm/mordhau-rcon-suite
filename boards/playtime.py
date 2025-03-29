@@ -1,29 +1,38 @@
 import asyncio
 import discord
-from boards.base import Board
 from datetime import datetime, timezone
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
 from table2ascii import table2ascii as t2a
+from boards.base import Board
 
 from common.compute import compute_time_txt
+from common.discord import make_embed
 
 
 class PlayTimeScoreboard(Board):
-    _playtime_collection: AsyncIOMotorCollection | None
+    _playtime_collection: AsyncIOMotorCollection
 
     @property
     def file_path(self) -> str:
         return "./persist/playtime_msg_id"
 
     def __init__(
-        self, playtime_collection: AsyncIOMotorCollection, channel_id, time_interval=60
+        self,
+        client: discord.Client,
+        playtime_collection: AsyncIOMotorCollection,
+        channel_id,
+        time_interval: int | None = 60,
     ):
         self._playtime_collection = playtime_collection
-        super().__init__(channel_id, time_interval)
+        super().__init__(client, channel_id, time_interval)
 
     async def send_board(self):
+        if not self._channel:
+            raise ValueError(
+                "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
+            )
         top_20_items: list[dict] = (
             await self._playtime_collection.find()
             .sort("minutes", -1)
@@ -48,16 +57,11 @@ class PlayTimeScoreboard(Board):
         )
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-        embed = discord.Embed(
-            title="<:ClockofDestiny:1310130670798110810> PLAYTIME LEADERBOARD (TOP 20) <:ClockofDestiny:1310130670798110810>",
-            description=time_sig + "\n" + ascii_table,
-            color=discord.Colour(int("1eff00", 16)),
-        )
-        embed.set_footer(
-            text=f"""
-Updates every {compute_time_txt(self._time_interval_mins)}
-Data has been collecting since 5/25/2024
-                """
+        embed = make_embed(
+            ":clock4: PLAYTIME RECORDS (top 20) :clock4:",
+            description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
+            color=discord.Colour(5763719),
+            footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}\nUnknown players will be shown by playfab id only, login and logout to capture username",
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)

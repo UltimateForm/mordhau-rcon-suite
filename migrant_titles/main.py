@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from reactivex import Observable, Subject
 from common.models import KillfeedEvent, PlayerStore
 from config_client.data import pt_config, bot_config
-from rcon.rcon_listener import RconListener
 from rcon.rcon import RconContext
 from common import logger
 import random
@@ -44,13 +43,13 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         self._player_store = player_store
         super().__init__()
 
-    async def _execute_command(self, command: str):
+    async def _execute_command(self, command: str) -> None:
         async with RconContext() as client:
             await client.execute(command)
 
     def _sanitize_name(self, playfab_id: str, current_name: str):
         login_username = self._player_store.players.get(playfab_id, None)
-        rename = pt_config.rename.get(playfab_id, None)
+        rename = pt_config.rename.get(playfab_id, None) if pt_config.rename else None
         target_name = rename or login_username or current_name
         return target_name.replace(f"[{self.rex_tile}]", "").lstrip()
 
@@ -77,7 +76,9 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         ),
         self.on_next(MigrantComputeEvent("placed", playfab_id, target_name))
 
-    def _process_killfeed_event(self, event_data: KillfeedEvent):
+    def _process_killfeed_event(self, event_data: KillfeedEvent | None):
+        if event_data is None:
+            return
         try:
             killer = event_data.user_name
             killed = event_data.killed_user_name
@@ -118,23 +119,14 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
 
 class MigrantTitles:
-    _killfeed_observable: Observable[KillfeedEvent]
+    _killfeed_observable: Observable[KillfeedEvent | None]
     rex_compute: TitleCompute
 
     def __init__(
-        self, killfeed_listener: Observable[KillfeedEvent], player_store: PlayerStore
+        self,
+        killfeed_listener: Observable[KillfeedEvent | None],
+        player_store: PlayerStore,
     ):
         self._killfeed_observable = killfeed_listener
         self.rex_compute = TitleCompute(player_store)
         self._killfeed_observable.subscribe(self.rex_compute._process_killfeed_event)
-
-
-async def main():
-    login_listener = RconListener(event="login", listening=False)
-    killfeed_listener = RconListener(event="killfeed", listening=False)
-    MigrantTitles(killfeed_listener, login_listener)
-    await asyncio.gather(killfeed_listener.start(), login_listener.start())
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
