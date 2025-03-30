@@ -198,7 +198,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 name=player1_data.get("user_name", "None"),
                 value=player1_kills.get(player2_id, 0),
             )
-            embed.add_field(name=":vs:", value="")
+            embed.add_field(name="<:Versus:1310139196471644190>", value="")
             embed.add_field(
                 name=player2_data.get("user_name", "None"),
                 value=player2_kills.get(player1_id, 0),
@@ -237,9 +237,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             for chunk in chunks:
                 chunk_embed = make_embed(ctx)
                 chunk_embed.color = 0xFFFC2E
-                chunk_embed.description = (
-                    f"## Players killed by **{killer_name}** ({playfab_id})\n```\n{chunk}```"
-                )
+                chunk_embed.description = f"## Players killed by **{killer_name}** ({playfab_id})\n```\n{chunk}```"
                 pages.append(Page(embeds=[chunk_embed]))
             paginator = Paginator(pages)
             await paginator.send(ctx)

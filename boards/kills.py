@@ -8,7 +8,6 @@ from table2ascii import table2ascii as t2a
 from boards.base import Board
 from config_client.data import bot_config
 from common.compute import compute_time_txt, human_format
-from common.discord import make_embed
 from rank_compute.kills import update_achieved_ranks
 
 BOARD_REFRESH_TIME = bot_config.kills_refresh_time or 60
@@ -90,11 +89,16 @@ class KillsScoreboard(Board):
         )
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-        embed = make_embed(
-            ":skull: KILL RECORDS (top 20) :skull:",
+        embed = discord.Embed(
+            title="<:ape_skull:1310131648234262538> KILL LEADERBOARD (TOP 20) <:death_among_us:1310131176228519976>",
             description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
-            color=discord.Colour(15548997),
-            footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
+            color=discord.Colour(int("ff0000", 16)),
+        )
+        embed.set_footer(
+            text=f"""
+Updates every {compute_time_txt(self._time_interval_mins)}
+Data has been collecting since 11/20/2024
+                """
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
