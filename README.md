@@ -444,8 +444,8 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 #### Admin Season config commands (.season)
 
 - **channel_id**: set channel (by id) to send season score board
-  - usage: `.season channel_id <channel_id>`
-  - example: `.season channel_id 2912891271860`
+  - usage: `.season channel <channel_id>`
+  - example: `.season channel 2912891271860`
 - **delete**: delete configured season
 - **info**: get info about current configured season
 - **create**: create season, currently only supported season_type is `kdr`, name should not have spaces 
