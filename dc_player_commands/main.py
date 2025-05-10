@@ -37,7 +37,7 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
                 raise Exception("Not found")
             embed.add_field(
                 name="Rank",
-                value=rank_2_emoji(kill_score.rank) if kill_score.rank else "None",
+                value=rank_2_emoji(kill_score.rank) if kill_score.rank is not None else "None",
                 inline=False,
             )
             embed.add_field(name="PlayfabId", value=kill_score.player_id)
