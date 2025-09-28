@@ -35,13 +35,13 @@ class DcDbConfig(commands.Cog):
         embed = common_make_embed(str(ctx.command), color=discord.Colour(2899536))
         return embed
 
-    @commands.group(invoke_without_command=False, description="DB admin commands")
+    @commands.group(invoke_without_command=False, description="DB admin commands")  # type: ignore
     async def db(self, ctx: commands.Context):
         if ctx.subcommand_passed is None:
             helper = self._client.get_cog("BotHelper")
             if not isinstance(helper, BotHelper) or not ctx.command:
                 return
-            await helper.help(ctx, ctx.command.name)
+            await helper.help(ctx, ctx.command.name)  # type: ignore
 
     @db.command(
         description="change a player's name in DB",

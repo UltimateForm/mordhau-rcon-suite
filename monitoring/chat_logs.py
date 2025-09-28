@@ -5,9 +5,9 @@ import discord
 from discord.ext.commands.bot import Bot
 from common.discord import channel_checker, make_embed
 from config_client.models import BotConfig
-from rcon.rcon import RconContext
 from common import logger
 from discord.ext import commands
+from rcon.rcon_pool import RconConnectionPool
 
 
 class ChatLogs(Observer[ChatEvent | None]):
@@ -15,13 +15,16 @@ class ChatLogs(Observer[ChatEvent | None]):
     _channel: discord.abc.Messageable | None = None
     _channel_id: int = 0
     _allowed_mentions: discord.AllowedMentions
+    _rcon_pool: RconConnectionPool
 
     def __init__(
         self,
         observable_dc_client: Observable[discord.Client],
         bot_config: BotConfig,
         dc_bot: Bot,
+        rcon_pool: RconConnectionPool,
     ):
+        self._rcon_pool = rcon_pool
         if not bot_config.chat_logs_channel:
             raise ValueError(
                 "ChatLogs instantiated without actual channel to send logs to"
@@ -33,12 +36,14 @@ class ChatLogs(Observer[ChatEvent | None]):
         observable_dc_client.subscribe(launch_discord_ready)
         self._channel_id = bot_config.chat_logs_channel
         self._allowed_mentions = discord.AllowedMentions(roles=True)
-        say_cmd = dc_bot.command(
+        say_cmd: commands.Command = dc_bot.command(
             name="say",
             description="send message to ingame chat",
             usage="<message>",
             help="ay yo, it's ya boi from discord comming at you with a new message",
-        )(self.say)
+        )(
+            self.say  # type: ignore
+        )
         say_cmd.add_check(channel_checker(self._channel_id))
         super().__init__()
 
@@ -47,9 +52,18 @@ class ChatLogs(Observer[ChatEvent | None]):
         author = ctx.author.display_name
         try:
             logger.info(f"{self.__class__.__name__}: {ctx.command} '{msg}'")
-            async with RconContext() as client:
+            client = await self._rcon_pool.get_client()
+            try:
                 r = await client.execute(f"say {author} > {msg}")
                 logger.info(f"{self.__class__.__name__}: {r}")
+            except Exception as e:
+                logger.error(
+                    f"Client {client.id} failed to send rcon say: {str(e)}. Expiring client."
+                )
+                client.used = 120
+                raise e
+            finally:
+                await self._rcon_pool.release_client(client)
             await ctx.message.add_reaction("👌")
         except Exception as e:
             embed = make_embed(str(ctx.command), color=discord.Colour(15548997))
@@ -77,5 +91,7 @@ class ChatLogs(Observer[ChatEvent | None]):
             msg += " @here"
         await self._channel.send(msg)
 
-    def on_next(self, value: ChatEvent):
+    def on_next(self, value: ChatEvent | None):
+        if value is None:
+            return
         asyncio.create_task(self.send_chat_log(value))

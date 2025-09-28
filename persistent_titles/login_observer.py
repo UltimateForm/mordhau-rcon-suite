@@ -1,21 +1,27 @@
 import asyncio
+from venv import logger
 from reactivex import Observer
 from common.models import LoginEvent
 from persistent_titles.playtime_client import PlaytimeClient
 from common.compute import compute_gate_text
 from config_client.models import PtConfig
-from rcon.rcon import RconContext
+from rcon.rcon_pool import RconConnectionPool
 
 
 class LoginObserver(Observer[LoginEvent | None]):
     _config: PtConfig
     playtime_client: PlaytimeClient | None
+    _rcon_pool: RconConnectionPool
 
     def __init__(
-        self, config: PtConfig, playtime_client: PlaytimeClient | None = None
+        self,
+        rcon_pool: RconConnectionPool,
+        config: PtConfig,
+        playtime_client: PlaytimeClient | None = None,
     ) -> None:
         self._config = config
         self.playtime_client = playtime_client
+        self._rcon_pool = rcon_pool
         super().__init__()
 
     def get_tag(self, tag: str):
@@ -44,9 +50,17 @@ class LoginObserver(Observer[LoginEvent | None]):
         tag_formatted = self.get_tag(target_tag)
         sanitized_username = user_name.replace(tag_formatted, "")
         new_user_name = " ".join([tag_formatted, sanitized_username])
-        async with asyncio.timeout(10):
-            async with RconContext() as client:
-                await client.execute(f"renameplayer {playfab_id} {new_user_name}")
+        client = await self._rcon_pool.get_client()
+        try:
+            await client.execute(f"renameplayer {playfab_id} {new_user_name}")
+        except Exception as e:
+            logger.info(
+                f"[TitleCompute] Client {client.id} failed to send rcon renameplayer. Expiring client."
+            )
+            client.used = 120
+            raise e
+        finally:
+            await self._rcon_pool.release_client(client)
 
     async def handle_salute(self, event_data: LoginEvent):
         playfab_id = event_data.player_id
@@ -56,18 +70,34 @@ class LoginObserver(Observer[LoginEvent | None]):
         await asyncio.sleep(
             self._config.salute_timer
         )  # so player can see his own salute
-        async with asyncio.timeout(10):
-            async with RconContext() as client:
-                await client.execute(f"say {target_salute}")
+        client = await self._rcon_pool.get_client()
+        try:
+            await client.execute(f"say {target_salute}")
+        except Exception as e:
+            logger.info(
+                f"[TitleCompute] Client {client.id} failed to send rcon say. Expiring client."
+            )
+            client.used = 120
+            raise e
+        finally:
+            await self._rcon_pool.release_client(client)
 
     async def handle_rename(self, event_data: LoginEvent):
         playfab_id = event_data.player_id
         rename = self.get_rename(playfab_id)
         if not rename:
             return
-        async with asyncio.timeout(10):
-            async with RconContext() as client:
-                await client.execute(f"renameplayer {playfab_id} {rename}")
+        client = await self._rcon_pool.get_client()
+        try:
+            await client.execute(f"renameplayer {playfab_id} {rename}")
+        except Exception as e:
+            logger.info(
+                f"[TitleCompute] Rcon client {client.id} failed to execute renameplayer, expiring client"
+            )
+            client.used = 120
+            raise e
+        finally:
+            await self._rcon_pool.release_client(client)
 
     def on_next(self, event_data: LoginEvent | None) -> None:
         if not event_data:

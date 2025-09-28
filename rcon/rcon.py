@@ -2,12 +2,16 @@ import asyncio
 import struct
 from contextlib import AbstractAsyncContextManager
 from common import logger
+import faker
+import time
 from config_client.data import bot_config
 
 # Packet types
 SERVERDATA_AUTH = 3
 SERVERDATA_EXECCOMMAND = 2
 DEFAULT_RCON_CONNECT_TIMEOUT = 5
+
+fake = faker.Faker()
 
 
 # src: https://github.com/pmrowla/pysrcds/blob/master/srcds/rcon.py
@@ -55,6 +59,18 @@ class RconClient:
     _writer: asyncio.StreamWriter
     _counter: int
     _connect_timeout: int
+    _cmd_lock: asyncio.Lock
+    created: float
+    used: float
+    id: str
+
+    @property
+    def age(self):
+        return time.time() - self.created
+
+    @property
+    def age_since_used(self):
+        return time.time() - self.used
 
     def __init__(self) -> None:
         self._port = bot_config.rcon_port
@@ -62,6 +78,10 @@ class RconClient:
         self._password = bot_config.rcon_password
         self._address = bot_config.rcon_address
         self._counter = 0
+        self.id = fake.city().replace(" ", "_").lower()
+        self._cmd_lock = asyncio.Lock()
+        self.created = time.time()
+        self.used = self.created
 
     async def recv_pkt(self) -> RconPacket:
         """Read one RCON packet"""
@@ -84,10 +104,14 @@ class RconClient:
         return self._counter
 
     async def rewarm(self):
-        self._writer.write(
-            RconPacket(self.build_packet_id(), SERVERDATA_EXECCOMMAND, "alive").pack()
-        )
-        await self._writer.drain()
+        async with self._cmd_lock:
+            self._writer.write(
+                RconPacket(
+                    self.build_packet_id(), SERVERDATA_EXECCOMMAND, "alive"
+                ).pack()
+            )
+            self.used = time.time()
+            await self._writer.drain()
 
     async def get_connection(self):
         conn: tuple[asyncio.StreamReader, asyncio.StreamWriter]
@@ -108,17 +132,33 @@ class RconClient:
             raise ValueError(
                 f"AUTHENTICATION FAILURE, MISMATCHING PKT ID INPUT={pkt_id}; OUTPUT={auth_response.pkt_id}"
             )
+        self.used = time.time()
 
     async def execute(self, command: str, msg_type: int = SERVERDATA_EXECCOMMAND):
-        pckt_id = self.build_packet_id()
-        self._writer.write(RconPacket(pckt_id, msg_type, command).pack())
-        await self._writer.drain()
-        response = await self.recv_pkt()
-        if response.pkt_id != pckt_id:
-            raise ValueError(
-                f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}"
-            )
-        return response.body
+        command_key = command.split(" ", 1)[0]
+        logger.debug(f"{self.id} executing command: {command_key}")
+        async with self._cmd_lock:
+            async with asyncio.timeout(10):
+                pckt_id = self.build_packet_id()
+                self._writer.write(RconPacket(pckt_id, msg_type, command).pack())
+                self.used = time.time()
+                await self._writer.drain()
+                response = await self.recv_pkt()
+                logger.debug(f"{self.id} executed command: {command_key}")
+                if response.pkt_id != pckt_id:
+                    raise ValueError(
+                        f"PACKET ID MISMATCH INPUT={pckt_id}; OUTPUT={response.pkt_id}"
+                    )
+                return response.body
+
+    async def close(self):
+        try:
+            async with self._cmd_lock:
+                self._writer.close()
+                async with asyncio.timeout(10):
+                    await self._writer.wait_closed()
+        except Exception as e:
+            logger.error(f"Error while closing RCON client {self.id}: {e}")
 
 
 class RconContext(RconClient, AbstractAsyncContextManager):

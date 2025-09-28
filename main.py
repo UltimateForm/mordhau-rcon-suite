@@ -13,6 +13,7 @@ from ingame_cmd.main import IngameCommands
 from persistent_titles.main import PersistentTitles
 from migrant_titles.main import MigrantTitles, MigrantComputeEvent
 from rcon.rcon_listener import RconListener
+from rcon.rcon_pool import RconConnectionPool
 from db_kills.main import DbKills
 from boards.playtime import PlayTimeScoreboard
 from killstreaks.main import KillStreaks
@@ -55,6 +56,7 @@ class MordhauRconSuite:
     db_kills: DbKills
     killstreaks: KillStreaks | None = None
     _initial_season_cfg: SeasonConfig | None = None
+    rcon_pool: RconConnectionPool
 
     @property
     def playtime_collection(self):
@@ -87,6 +89,7 @@ class MordhauRconSuite:
         self.set_up_experiences()
         self.set_up_boards()
         self.set_up_monitoring()
+        self.rcon_pool = RconConnectionPool(3)
 
     def _entrance_desk(self, player: LoginEvent | None):
         try:
@@ -151,6 +154,7 @@ class MordhauRconSuite:
         cogs.append(BoardCommands(self._dc_bot, self._bot_config))
         if self._bot_config.info_board_enabled():
             info_board = InfoBoard(
+                self.rcon_pool,
                 self._dc_bot,
                 self._bot_config.info_channel or 0,
                 self._bot_config.info_refresh_time,
@@ -162,7 +166,9 @@ class MordhauRconSuite:
     def set_up_experiences(self):
         self.player_store = PlayerStore()
         if self._bot_config.title:
-            self.migrant_titles = MigrantTitles(self.killfeed_events, self.player_store)
+            self.migrant_titles = MigrantTitles(
+                self.killfeed_events, self.player_store, self.rcon_pool
+            )
 
             def reset_migrant_title(state: str | None):
                 if not state:
@@ -173,13 +179,16 @@ class MordhauRconSuite:
             self.matchstate_events.subscribe(reset_migrant_title)
             self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
         self.peristent_titles = PersistentTitles(
+            self.rcon_pool,
             self.login_events,
             self._dc_bot,
             self.playtime_collection,
             self.live_sessions_collection,
         )
 
-        self.ingame_commands = IngameCommands(self._pt_config, self._database)
+        self.ingame_commands = IngameCommands(
+            self._pt_config, self._database, self.rcon_pool
+        )
         self.db_kills = DbKills(
             self.kills_collection,
             self.killfeed_events,
@@ -194,7 +203,7 @@ class MordhauRconSuite:
             SeasonWatch(self.kills_collection, self._initial_season_cfg)
         )
         if self._bot_config.ks_enabled:
-            self.killstreaks = KillStreaks()
+            self.killstreaks = KillStreaks(self.rcon_pool)
 
             def matchstate_next(state: str | None):
                 if not state:
@@ -210,7 +219,9 @@ class MordhauRconSuite:
     def set_up_monitoring(self):
         if not self._bot_config.chat_logs_channel:
             return
-        chat_logs = ChatLogs(self._dc_client, self._bot_config, self._dc_bot)
+        chat_logs = ChatLogs(
+            self._dc_client, self._bot_config, self._dc_bot, self.rcon_pool
+        )
         self.chat_events.subscribe(chat_logs)
 
     def set_up_db(self):
@@ -230,7 +241,7 @@ class MordhauRconSuite:
         )
         d_token = self._bot_config.d_token
         self._dc_client = ObservableDiscordClient(intents=common_intents, loop=loop)
-        register_dc_player_commands(self._dc_bot, self._database)
+        register_dc_player_commands(self._dc_bot, self._database, self.rcon_pool)
         self._dc_bot.add_cog(
             DcDbConfig(
                 self._dc_bot,
@@ -238,9 +249,9 @@ class MordhauRconSuite:
                 self.playtime_collection,
                 self.kills_collection,
             )
-        ),
-        self._dc_bot.add_cog(BotHelper(self._dc_bot, self._bot_config)),
-        self._dc_bot.add_cog(SeasonAdminCommands(self._dc_bot, self._bot_config)),
+        )
+        self._dc_bot.add_cog(BotHelper(self._dc_bot, self._bot_config))
+        self._dc_bot.add_cog(SeasonAdminCommands(self._dc_bot, self._bot_config))
         self.tasks.update(
             [
                 self._dc_bot.start(token=d_token),

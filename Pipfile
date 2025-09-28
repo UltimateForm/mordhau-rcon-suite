@@ -10,10 +10,10 @@ reactivex = "*"
 dacite = "*"
 python-dotenv = "*"
 numpy = "*"
-motor = "*"
 table2ascii = "*"
 aiofiles = "*"
 py-cord = "*"
+motor = "*"
 
 [dev-packages]
 flake8 = "*"
