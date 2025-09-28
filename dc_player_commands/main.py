@@ -1,4 +1,3 @@
-import asyncio
 import discord
 from discord.ext.commands import Bot, Context
 from common import logger, parsers
@@ -8,7 +7,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorDatabase,
 )
 from rank_compute.playtime import get_playtime
-from rcon.rcon import RconContext
+from rcon.rcon_pool import RconConnectionPool
 from rank_compute.kills import get_kills, get_season_kills
 from config_client.models import SeasonConfig
 import re
@@ -16,7 +15,9 @@ from db_kills import aggregation
 from discord.ext.pages import Paginator, Page
 
 
-def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
+def register_dc_player_commands(
+    bot: Bot, db: AsyncIOMotorDatabase, rcon_pool: RconConnectionPool
+) -> None:
     def make_embed(ctx: Context):
         embed = common_make_embed(str(ctx.command), color=discord.Colour(3447003))
         return embed
@@ -38,7 +39,11 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
             embed.color = 16705372
             embed.add_field(
                 name="Rank",
-                value=rank_2_emoji(kill_score.rank) if kill_score.rank is not None else "None",
+                value=(
+                    rank_2_emoji(kill_score.rank)
+                    if kill_score.rank is not None
+                    else "None"
+                ),
                 inline=False,
             )
             embed.add_field(name="PlayfabId", value=kill_score.player_id)
@@ -70,7 +75,9 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
 
     bot.command(
         "kdr", description="gets kdr score for player", usage="<playfab_id_or_username>"
-    )(kdr)
+    )(
+        kdr
+    )  # type: ignore
 
     async def skdr(ctx: Context, argument: str):
         collection = db["kills"]
@@ -148,9 +155,18 @@ def register_dc_player_commands(bot: Bot, db: AsyncIOMotorDatabase):
         embed = make_embed(ctx)
         try:
             player_list_raw: str = ""
-            async with asyncio.timeout(30):
-                async with RconContext() as client:
-                    player_list_raw = await client.execute("playerlist")
+            client = await rcon_pool.get_client()
+            try:
+                player_list_raw = await client.execute("playerlist")
+            except Exception as e:
+                if client:
+                    logger.info(
+                        f"Rcon Client {client.id} encountered error, expiring it, error: {e}"
+                    )
+                    client.used = 120  # force expire
+                raise e
+            finally:
+                await rcon_pool.release_client(client)
             players = parsers.parse_playerlist(player_list_raw)
 
             players_text = (

@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from reactivex import Observable, Subject
 from common.models import KillfeedEvent, PlayerStore
 from config_client.data import pt_config, bot_config
-from rcon.rcon import RconContext
 from common import logger
 import random
+
+from rcon.rcon_pool import RconConnectionPool
 
 DEFAULT_REX_TITLE = "REX"
 
@@ -31,15 +32,25 @@ class TitleCompute(Subject[MigrantComputeEvent]):
     current_rex: str = ""
     rex_tile: str = ""
     _player_store: PlayerStore
+    _rcon_pool: RconConnectionPool
 
-    def __init__(self, player_store: PlayerStore):
+    def __init__(self, player_store: PlayerStore, rcon_pool: RconConnectionPool):
         self.rex_tile = bot_config.title or DEFAULT_REX_TITLE
         self._player_store = player_store
+        self._rcon_pool = rcon_pool
         super().__init__()
 
     async def _execute_command(self, command: str) -> None:
-        async with RconContext() as client:
+        client = await self._rcon_pool.get_client()
+        try:
             await client.execute(command)
+        except Exception as e:
+            logger.info(
+                f"[TitleCompute] Rcon client {client.id} failed to execute command `{command}`, expiring client"
+            )
+            raise e
+        finally:
+            await self._rcon_pool.release_client(client)
 
     def _sanitize_name(self, playfab_id: str, current_name: str):
         login_username = self._player_store.players.get(playfab_id, None)
@@ -67,7 +78,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         target_name = self._sanitize_name(playfab_id, user_name)
         await self._execute_command(
             f"renameplayer {playfab_id} [{self.rex_tile}] {target_name}"
-        ),
+        )
         self.on_next(MigrantComputeEvent("placed", playfab_id, target_name))
 
     def _process_killfeed_event(self, event_data: KillfeedEvent | None):
@@ -120,7 +131,8 @@ class MigrantTitles:
         self,
         killfeed_listener: Observable[KillfeedEvent | None],
         player_store: PlayerStore,
+        rcon_pool: RconConnectionPool,
     ):
         self._killfeed_observable = killfeed_listener
-        self.rex_compute = TitleCompute(player_store)
+        self.rex_compute = TitleCompute(player_store, rcon_pool)
         self._killfeed_observable.subscribe(self.rex_compute._process_killfeed_event)

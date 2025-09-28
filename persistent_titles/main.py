@@ -11,6 +11,8 @@ from common import logger
 from config_client.data import pt_config
 from discord.ext.commands import Bot
 
+from rcon.rcon_pool import RconConnectionPool
+
 
 class PersistentTitles:
     login_observer: LoginObserver
@@ -18,13 +20,14 @@ class PersistentTitles:
 
     def __init__(
         self,
+        rcon_pool: RconConnectionPool,
         login_observable: Observable[LoginEvent | None],
         bot: Bot | None = None,
         playtime_collection: AsyncIOMotorCollection | None = None,
         live_sessions_collection: AsyncIOMotorCollection | None = None,
     ):
         self._login_observable = login_observable
-        self.login_observer = LoginObserver(pt_config)
+        self.login_observer = LoginObserver(rcon_pool, pt_config)
         self._login_observable.subscribe(self.login_observer)
         if bot:
             register_cfg_dc_commands(bot)
