@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "afeb03bfe9d7f5db710ff44acca08766b68d5d43f820ed7f8601f39a16b8ac1f"
+            "sha256": "35c14ade6df9e63feaa26188d82ca00681820846f80e054f4928ca277fc7492a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -163,6 +163,15 @@
             ],
             "markers": "python_version >= '3.10'",
             "version": "==2.8.0"
+        },
+        "faker": {
+            "hashes": [
+                "sha256:090bb5abbec2b30949a95ce1ba6b20d1d0ed222883d63483a0d4be4a970d6fb8",
+                "sha256:b08233118824423b5fc239f7dd51f145e7018082b4164f8da6a9994e1f1ae793"
+            ],
+            "index": "mordhau-rcon-suite",
+            "markers": "python_version >= '3.9'",
+            "version": "==37.8.0"
         },
         "frozenlist": {
             "hashes": [
@@ -762,6 +771,14 @@
             "markers": "python_version >= '3.8'",
             "version": "==4.12.2"
         },
+        "tzdata": {
+            "hashes": [
+                "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8",
+                "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9"
+            ],
+            "markers": "python_version >= '2'",
+            "version": "==2025.2"
+        },
         "wcwidth": {
             "hashes": [
                 "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859",
@@ -861,12 +878,12 @@
     "develop": {
         "faker": {
             "hashes": [
-                "sha256:8955706c56c28099585e9e2b6f814eb0a3a227eb36a2ee3eb9ab577c4764eacc",
-                "sha256:948bd27706478d3aa0b6f9f58b9f25207098f6ca79852c7b49c44a8ced2bc59b"
+                "sha256:090bb5abbec2b30949a95ce1ba6b20d1d0ed222883d63483a0d4be4a970d6fb8",
+                "sha256:b08233118824423b5fc239f7dd51f145e7018082b4164f8da6a9994e1f1ae793"
             ],
             "index": "mordhau-rcon-suite",
             "markers": "python_version >= '3.9'",
-            "version": "==37.0.2"
+            "version": "==37.8.0"
         },
         "flake8": {
             "hashes": [
@@ -1071,11 +1088,11 @@
         },
         "tzdata": {
             "hashes": [
-                "sha256:24894909e88cdb28bd1636c6887801df64cb485bd593f2fd83ef29075a81d694",
-                "sha256:7e127113816800496f027041c570f50bcd464a020098a3b6b199517772303639"
+                "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8",
+                "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9"
             ],
             "markers": "python_version >= '2'",
-            "version": "==2025.1"
+            "version": "==2025.2"
         }
     }
 }
