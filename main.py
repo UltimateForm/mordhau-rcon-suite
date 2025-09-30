@@ -78,6 +78,7 @@ class MordhauRconSuite:
     ):
         self._bot_config = bot_config
         self._pt_config = pt_config
+        self.rcon_pool = RconConnectionPool(3)
         if SeasonConfig.exists():
             self._initial_season_cfg = SeasonConfig.load()
         self.set_up_db()
@@ -89,7 +90,6 @@ class MordhauRconSuite:
         self.set_up_experiences()
         self.set_up_boards()
         self.set_up_monitoring()
-        self.rcon_pool = RconConnectionPool(3)
 
     def _entrance_desk(self, player: LoginEvent | None):
         try:

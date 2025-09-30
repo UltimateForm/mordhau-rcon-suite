@@ -159,8 +159,8 @@ class BotConfig(IOBoundDataclass):
 
 @dataclass
 class PtConfig(IOBoundDataclass):
-    tags: dict[str, str]
-    salutes: dict[str, str]
+    tags: dict[str, str] = field(default_factory=dict)
+    salutes: dict[str, str] = field(default_factory=dict)
     playtime_tags: dict[str, str] = field(default_factory=dict)
     rename: dict[str, str] | None = field(default_factory=dict)
     tag_format: str = "[{0}]"
