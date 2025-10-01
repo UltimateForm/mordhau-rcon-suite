@@ -1,10 +1,10 @@
-import asyncio
 from datetime import timezone, datetime
 from itertools import takewhile
 from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
 from common.discord import make_embed
+from common.gc_shield import backtask
 from rcon.rcon_pool import RconConnectionPool
 import discord
 
@@ -43,6 +43,7 @@ class InfoBoard(Board):
                 logger.error(
                     f"[InfoBoard] Error obtaining server info and playerlist: {e}"
                 )
+                client.used = 120
                 raise e
             finally:
                 await self.rcon_pool.release_client(client)
@@ -84,7 +85,7 @@ class InfoBoard(Board):
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
-                asyncio.create_task(self.write_msg_id())
+                backtask(self.write_msg_id())
             else:
                 await self._current_message.edit(embed=embed)
         except Exception as e:

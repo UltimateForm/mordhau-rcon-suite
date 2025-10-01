@@ -1,10 +1,10 @@
-import asyncio
 import aiofiles
 from aiofiles import os as aos
 import discord
 from discord.ext import tasks, commands
 from abc import abstractmethod
 from common import logger
+from common.gc_shield import backtask
 
 
 class Board(commands.Cog):
@@ -21,7 +21,9 @@ class Board(commands.Cog):
     def file_path(self) -> str:
         pass
 
-    def __init__(self, client: discord.Client, channel_id: int, time_interval: int | None = 60):
+    def __init__(
+        self, client: discord.Client, channel_id: int, time_interval: int | None = 60
+    ):
         self._channel_id = channel_id
         self._client = client
         self._time_interval = time_interval or 60
@@ -31,7 +33,7 @@ class Board(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        asyncio.create_task(self.start(self._client))
+        backtask(self.start(self._client))
 
     async def load_channel(self, client: discord.Client):
         channel = await client.fetch_channel(self._channel_id)
@@ -66,7 +68,7 @@ class Board(commands.Cog):
             return
         await aos.remove(self.file_path)
 
-    async def delete_previous_message(self) -> str | None:
+    async def delete_previous_message(self):
         if not self._channel:
             return
         try:

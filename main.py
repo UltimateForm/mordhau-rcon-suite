@@ -1,4 +1,5 @@
 import asyncio
+from common.gc_shield import backtask
 from dc_player_commands.main import register_dc_player_commands
 from config_client.data import pt_config as p_config, bot_config as b_config
 from dotenv import load_dotenv
@@ -103,7 +104,7 @@ class MordhauRconSuite:
                     self.migrant_titles.rex_compute.current_rex = ""
                 self.player_store.players.pop(player.player_id, None)
                 if self.killstreaks:
-                    asyncio.create_task(
+                    backtask(
                         self.killstreaks.self_end_ks(player.user_name, player.player_id)
                     )
             else:
@@ -117,7 +118,7 @@ class MordhauRconSuite:
         logger.debug(f"handle_tag_for_removed_rex {event}")
         if event.event_type != "removed":
             return
-        asyncio.create_task(
+        backtask(
             self.peristent_titles.login_observer.handle_tag(
                 LoginEvent("Login", "", event.user_name, event.playfab_id, "in")
             )

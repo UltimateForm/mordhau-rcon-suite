@@ -4,6 +4,7 @@ from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
 from pymongo import UpdateOne
+from common.gc_shield import backtask
 from common.models import KillRecord, PlayerStore, KillfeedEvent
 from common import logger, parsers
 from seasons.season_controller import SEASON_TOPIC, SeasonEvent
@@ -30,12 +31,12 @@ class DbKills:
         self._season = season
 
         def _load_season(event: SeasonEvent):
-            asyncio.create_task(self.load_season(event))
+            backtask(self.load_season(event))
 
         SEASON_TOPIC.subscribe(_load_season)
 
         def _launch_kill_feed_task(event: KillfeedEvent | None):
-            asyncio.create_task(self._process_killfeed(event))
+            backtask(self._process_killfeed(event))
 
         killfeed_observable.subscribe(_launch_kill_feed_task)
 

@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 from reactivex import Observable, Subject
+from common.gc_shield import backtask
 from common.models import KillfeedEvent, PlayerStore
 from config_client.data import pt_config, bot_config
 from common import logger
@@ -66,7 +67,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
     def _remove_rex(self, playfab_id: str, user_name):
         target_name = self._sanitize_name(playfab_id, user_name)
-        task = asyncio.create_task(
+        task = backtask(
             self._execute_command(f"renameplayer {playfab_id} {target_name}")
         )
 
@@ -99,14 +100,14 @@ class TitleCompute(Subject[MigrantComputeEvent]):
                 empty_tile_msg = self._get_migrancy_text(
                     VACANCY_MIGRANCY_TEMPLATES, killer, killed
                 )
-                asyncio.create_task(self._execute_command(f"say {empty_tile_msg}"))
-                asyncio.create_task(self._place_rex(killer_playfab_id, killer))
+                backtask(self._execute_command(f"say {empty_tile_msg}"))
+                backtask(self._place_rex(killer_playfab_id, killer))
                 self.current_rex = killer_playfab_id
             elif killed_playfab_id and self.current_rex == killed_playfab_id:
                 title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
-                asyncio.create_task(self._execute_command(f"say {title_msg}"))
+                backtask(self._execute_command(f"say {title_msg}"))
                 if killer_playfab_id:
-                    asyncio.create_task(self._place_rex(killer_playfab_id, killer))
+                    backtask(self._place_rex(killer_playfab_id, killer))
                 self._remove_rex(killed_playfab_id, killed)
                 self.current_rex = killer_playfab_id
             elif (
@@ -119,7 +120,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
             # note: uncomment this for solo debug
             # elif killer_playfab_id == self.current_rex:
             #     self.current_rex = ""
-            #     asyncio.create_task(
+            #     backtask(
             #         self._execute_command(
             #             f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
             #         )

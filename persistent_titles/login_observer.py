@@ -1,6 +1,7 @@
 import asyncio
 from venv import logger
 from reactivex import Observer
+from common.gc_shield import backtask
 from common.models import LoginEvent
 from persistent_titles.playtime_client import PlaytimeClient
 from common.compute import compute_gate_text
@@ -105,6 +106,6 @@ class LoginObserver(Observer[LoginEvent | None]):
         order = event_data.instance.lower()
         if order == "out":
             return
-        asyncio.create_task(self.handle_rename(event_data))
-        asyncio.create_task(self.handle_salute(event_data))
-        asyncio.create_task(self.handle_tag(event_data))
+        backtask(self.handle_rename(event_data))
+        backtask(self.handle_salute(event_data))
+        backtask(self.handle_tag(event_data))

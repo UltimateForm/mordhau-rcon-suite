@@ -1,4 +1,3 @@
-import asyncio
 from xmlrpc.client import Boolean
 import discord
 from motor.motor_asyncio import (
@@ -6,6 +5,7 @@ from motor.motor_asyncio import (
 )
 from table2ascii import table2ascii as t2a
 from boards.base import Board
+from common.gc_shield import backtask
 from config_client.data import bot_config
 from common.discord import make_season_embed
 from config_client.models import SeasonConfig
@@ -26,7 +26,7 @@ class SeasonScoreboard(Board):
 
     @property
     def active(self) -> bool:
-        return Boolean(self._season_cfg) and self._season_cfg.is_active
+        return Boolean(self._season_cfg) and self._season_cfg.is_active  # type: ignore
 
     @property
     def season_name(self) -> str:
@@ -43,7 +43,7 @@ class SeasonScoreboard(Board):
         self._kills_collection = kills_collection
 
         def launch_season_next(event: SeasonEvent):
-            asyncio.create_task(self.season_next(event))
+            backtask(self.season_next(event))
 
         SEASON_TOPIC.subscribe(launch_season_next)
         super().__init__(
@@ -68,7 +68,7 @@ class SeasonScoreboard(Board):
 
     async def season_next(self, event: SeasonEvent):
         self._season_cfg = await SeasonConfig.aload()
-        self._channel_id = self._season_cfg.channel or 0
+        self._channel_id = self._season_cfg.channel or 0 if self._season_cfg else 0
         if event == SeasonEvent.END:
             self.job.stop()
             self._channel = None
@@ -138,6 +138,6 @@ class SeasonScoreboard(Board):
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
-            asyncio.create_task(self.write_msg_id())
+            backtask(self.write_msg_id())
         else:
             await self._current_message.edit(embed=embed)

@@ -1,8 +1,8 @@
-import asyncio
 from reactivex import Observer
 
 from common import logger
 from common.compute import compute_gate_text, compute_next_gate_text, compute_time_txt
+from common.gc_shield import backtask
 from common.models import ChatEvent
 from config_client.models import PtConfig, SeasonConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
@@ -32,7 +32,9 @@ class IngameCommands(Observer[ChatEvent | None]):
         try:
             await client.execute(f"say {msg}")
         except Exception as e:
-            logger.error(f"Client {client.id} failed to send rcon say: {str(e)}. Expiring client.")
+            logger.error(
+                f"Client {client.id} failed to send rcon say: {str(e)}. Expiring client."
+            )
             client.used = 120
             raise e
         finally:
@@ -126,17 +128,15 @@ class IngameCommands(Observer[ChatEvent | None]):
         playfab_id = event_data.player_id
         user_name = event_data.user_name
         if message == ".playtime":
-            asyncio.create_task(self.handle_playtime(playfab_id, user_name))
+            backtask(self.handle_playtime(playfab_id, user_name))
         elif message == ".rank":
-            asyncio.create_task(self.handle_rank(playfab_id, user_name))
+            backtask(self.handle_rank(playfab_id, user_name))
         elif message == ".kdr":
-            asyncio.create_task(self.handle_kdr(playfab_id, user_name))
+            backtask(self.handle_kdr(playfab_id, user_name))
         elif message == ".skdr":
-            asyncio.create_task(self.handle_skdr(playfab_id, user_name))
+            backtask(self.handle_skdr(playfab_id, user_name))
         elif message.startswith(".versus") or message.startswith(".vs"):
             split_versus = message.split(" ", 1)
             if len(split_versus) < 2:
                 return
-            asyncio.create_task(
-                self.handle_versus(playfab_id, user_name, split_versus[1])
-            )
+            backtask(self.handle_versus(playfab_id, user_name, split_versus[1]))

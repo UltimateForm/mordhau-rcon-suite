@@ -1,8 +1,8 @@
-import asyncio
 import random
 from reactivex import Observer
 from common import logger
 from common.compute import compute_gate
+from common.gc_shield import backtask
 from config_client.data import ks_config
 from config_client.models import KsConfig
 from rcon.rcon_pool import RconConnectionPool
@@ -107,13 +107,9 @@ class KillStreaks(Observer[KillfeedEvent | None]):
     def on_next(self, kill_event: KillfeedEvent | None):
         if kill_event is None or not kill_event.killed_id or not kill_event.killer_id:
             return
-        asyncio.create_task(
-            self.first_blood(kill_event.user_name, kill_event.killed_user_name)
-        )
-        asyncio.create_task(
-            self.handle_killer_streak(kill_event.user_name, kill_event.killer_id)
-        )
-        asyncio.create_task(
+        backtask(self.first_blood(kill_event.user_name, kill_event.killed_user_name))
+        backtask(self.handle_killer_streak(kill_event.user_name, kill_event.killer_id))
+        backtask(
             self.handle_killed_streak(
                 kill_event.killed_user_name, kill_event.killed_id, kill_event.user_name
             )

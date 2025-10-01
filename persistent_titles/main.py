@@ -1,6 +1,6 @@
-import asyncio
 from motor.motor_asyncio import AsyncIOMotorCollection
 from reactivex import Observable
+from common.gc_shield import backtask
 from common.models import LoginEvent
 from persistent_titles.login_observer import LoginObserver
 from persistent_titles.session_topic import SessionTopic
@@ -62,8 +62,8 @@ class PersistentTitles:
             user_name = event_data.user_name
             date = parse_date(event_data.date)
             if order == "in":
-                asyncio.create_task(session_topic.login(playfab_id, user_name, date))
+                backtask(session_topic.login(playfab_id, user_name, date))
             elif order == "out":
-                asyncio.create_task(session_topic.logout(playfab_id, user_name, date))
+                backtask(session_topic.logout(playfab_id, user_name, date))
 
         self._login_observable.subscribe(session_topic_login_handler)
