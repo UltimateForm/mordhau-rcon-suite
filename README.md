@@ -46,6 +46,9 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Ingame features](#ingame-features)
       - [.env Config](#env-config)
       - [FAQ](#faq)
+  - [Migration to Night's mods](#migration-to-nights-mods)
+    - [Exporting playtime data](#exporting-playtime-data)
+    - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
   - [Chat logs](#chat-logs)
   - [Ingame commands](#ingame-commands)
   - [Discord usage](#discord-usage)
@@ -315,6 +318,7 @@ Make sure your instance is located geographically close to bot for best performa
    1. this is the database, you can create a new one or use any existing one you already have
    2. if you're lost read here https://www.mongodb.com/resources/products/fundamentals/create-database
 
+
 #### FAQ
 1. what is minumum amount of playtime to be recorded?
    1. 1 minute
@@ -340,6 +344,81 @@ Make sure your instance is located geographically close to bot for best performa
         "minutes": 120
       }
       ```
+
+## Migration to Night's mods
+
+Night has the following serverside mods available:
+
+- CosmeticRanks https://mod.io/g/mordhau/m/cosmetic-ranks
+- PlaytimeTracker https://mod.io/g/mordhau/m/playtime-tracker
+
+A serverside mod might be preferable for your server in alternative to what this bot does, RCON based tracking, especially if your server's RCON is already very noisy.
+
+You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to Night's mods. Note that Night's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
+
+### Exporting playtime data
+
+- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [Night's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
+
+sample export:
+```json
+{
+  "D1230AA0B615K12E": 10.05,
+  "30C4D00A3A64CC50": 2.0166666666666666,
+  "5F958D6D47F02B23": 0.31666666666666665,
+  "470BC011D174DA43": 0.016666666666666666,
+  "54296FFB37437C16": 0.03333333333333333,
+  "86978C43BB55F715": 0.16666666666666666,
+  "64C006A614CD85B9": 9.516666666666667
+}
+```
+
+### Exporting playtime and custom ranks
+
+- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
+
+sample export:
+```json
+{
+  "Ranks": [
+    {
+      "Name": "Expert",
+      "Weight": 100,
+      "Prefix": "[Expert] ",
+      "GiveOnPlaytime": 5.0
+    },
+    {
+      "Name": "Veteran",
+      "Weight": 200,
+      "Prefix": "[Veteran] ",
+      "GiveOnPlaytime": 2.0
+    },
+    {
+      "Name": "Squire",
+      "Weight": 300,
+      "Prefix": "[Squire] ",
+      "GiveOnPlaytime": 1.0
+    },
+    {
+      "Name": "Initiant",
+      "Weight": 500,
+      "Prefix": "[Initiant] ",
+      "GiveOnPlaytime": 0.5
+    },
+    {
+      "Name": "FFAer",
+      "Weight": 50,
+      "Prefix": "[FFAer] "
+    }
+  ],
+  "PlayerRanks": [
+    {
+      "PlayfabID": "64C006A614CD85B9",
+      "Rank": "FFAer"
+    }
+  ]
+}
+```
 
 ## Chat logs
 
@@ -439,6 +518,7 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 - **chg_name**: change a player's name in DB
   - usage: `.db chg_name <plafayb_id> <new_name>`
 - **metadata**: show metadata of db
+- **export_playtime**: export playtime data as json, compatible with server side mods such as Night's Playtime. Will also write the export to `./persist/` folder
 
 
 #### Admin Season config commands (.season)
