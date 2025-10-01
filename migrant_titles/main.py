@@ -20,16 +20,10 @@ class MigrantComputeEvent:
 
 
 VACANCY_MIGRANCY_TEMPLATES = [
-    "{0} has defeated {1} and claimed the vacant {2} title",
-    "After defeating {1}, {0} has now become the holder of the vacant {2} title",
-    "{0} defeated {1} to claim the vacant {2} title.",
+    "{0} defeated {1} and claimed the {2} title",
 ]
 MIGRANCY_TEMPLATES = [
-    "{0} has defeated {1} and claimed his {2} title",
-    "{0} has triumphed over {1} and secured his {2} title.",
-    "{0} defeated {1} to seize his {2} title.",
-    "Having beaten {1}, {0} has now claimed his {2} title."
-    "{0} has downed {1} and is now the holder of his {2} title.",
+    "{0} defeated {1} and is now the {2}!",
 ]
 
 
