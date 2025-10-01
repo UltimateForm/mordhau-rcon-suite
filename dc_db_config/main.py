@@ -1,6 +1,10 @@
+import io
+import json
+import time
 import discord
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorCollection
+from common import logger
 from config_client.models import BotConfig
 from common.discord import (
     BotHelper,
@@ -8,6 +12,7 @@ from common.discord import (
     make_embed as common_make_embed,
 )
 from pymongo import UpdateOne
+from aiofiles import open as aio_open
 
 
 class DcDbConfig(commands.Cog):
@@ -101,5 +106,58 @@ class DcDbConfig(commands.Cog):
         except Exception as e:
             embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(e), inline=False)
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
+
+    @db.command(
+        description="export playtime data as json, compatible with server side mods such as Night's Playtime. Will also write the export to ./persist/ folder"
+    )
+    async def export_playtime(self, ctx: commands.Context):
+        if (
+            self._cfg.config_bot_channel
+            and ctx.channel.id != self._cfg.config_bot_channel
+        ):
+            return
+        embed = self.make_embed(ctx)
+        try:
+            result = self._playtime_collection.aggregate(
+                [
+                    {
+                        "$project": {
+                            "_id": 0,
+                            "k": "$playfab_id",
+                            "v": {"$divide": ["$minutes", 60]},
+                        }
+                    },
+                    {"$group": {"_id": None, "data": {"$push": "$$ROOT"}}},
+                    {"$project": {"_id": 0, "map": {"$arrayToObject": "$data"}}},
+                ]
+            )
+            first_doc = await result.to_list(length=1)
+            if not first_doc or "map" not in first_doc[0]:
+                raise Exception("Failed to get playtime map from aggregation")
+            json_str = json.dumps(first_doc[0]["map"], indent=2)
+            time_now = time.time()
+            ti = int(time_now)
+            file_name = f"playtime_export_{ti}.json"
+            async with aio_open(f"./persist/{file_name}", "w") as f:
+                await f.write(json_str)
+            file = discord.File(
+                fp=io.BytesIO(json_str.encode("utf-8")),
+                filename=file_name,
+                description="Exported playtime data",
+            )
+            await ctx.message.reply(
+                f"Exported playtime. Also written to `./persist/{file_name}`", file=file
+            )
+        except Exception as e:
+            logger.error(f"Failed to export playtime: {e}")
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(type(e)), inline=False)
+            embed.add_field(
+                name="Hint",
+                value="Check logs for details, and check folder `./persist/`, file might have been created there",
+                inline=False,
+            )
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
