@@ -29,7 +29,6 @@ If you need custom changes please reach out to me on discord or create an issue.
         - [example](#example)
       - [b) via `./persist/bot.config.json`](#b-via-persistbotconfigjson)
         - [example](#example-1)
-      - [Experimental settings](#experimental-settings)
     - [3. setup MONGODB TABLES (COLLECTIONS)](#3-setup-mongodb-tables-collections)
     - [4. run bot](#4-run-bot)
   - [Killstreaks](#killstreaks)
@@ -103,7 +102,7 @@ Here's how the config is loaded:
     17. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
     18. KS_ENABLED (optional, 1 for enabled, 0 for disabled, default disabled)
     19. CHAT_LOGS_CHANNEL (optional, channel to post chat logs)
-    20. EXPERIMENTAL_BULK_LISTENER (optional, 1 for enabled, 0 for disabled)
+    20. USE_BULK_LISTENER (optional, 1 for enabled, 0 for disabled, recommended enabled, uses a single RCON connection to track killfeed, chat, login, matchstate events)
 
 ##### example
 
@@ -182,11 +181,6 @@ Template:
   "db_name": "mordhau"
 }
 ```
-
-#### Experimental settings
-
-- EXPERIMENTAL_BULK_LISTENER (json `experimental_bulk_listener`)
-  - by default the bot will create different RCON connections per each event it's listening, with this setting enabled the bot will instead reuse the same connection for all the events it needs
 
 ### 3. setup MONGODB TABLES (COLLECTIONS)
 (If you don't know how to add tables: https://www.mongodb.com/docs/atlas/atlas-ui/collections/)

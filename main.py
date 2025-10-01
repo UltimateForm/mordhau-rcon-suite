@@ -84,7 +84,7 @@ class MordhauRconSuite:
             self._initial_season_cfg = SeasonConfig.load()
         self.set_up_db()
         self.set_up_discord(loop)
-        if self._bot_config.experimental_bulk_listener:
+        if self._bot_config.use_bulk_listener:
             self.set_up_bulk_listeners()
         else:
             self.set_up_listeners()
