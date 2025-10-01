@@ -50,7 +50,7 @@ class InfoBoard(Board):
             await self._client.change_presence(
                 activity=discord.Activity(
                     type=discord.ActivityType.watching,
-                    name=f"{num_players_online} players online",
+                    name=f"({num_players_online}/55) Online!",
                 )
             )
             embed.add_field(name="Gamemode:", value=server_info.game_mode)
