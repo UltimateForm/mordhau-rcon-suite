@@ -1,5 +1,5 @@
-import asyncio
 from reactivex import Observer, Observable
+from common.gc_shield import backtask
 from common.models import ChatEvent
 import discord
 from discord.ext.commands.bot import Bot
@@ -31,7 +31,7 @@ class ChatLogs(Observer[ChatEvent | None]):
             )
 
         def launch_discord_ready(x: discord.Client):
-            asyncio.create_task(self._on_discord_ready(x))
+            backtask(self._on_discord_ready(x))
 
         observable_dc_client.subscribe(launch_discord_ready)
         self._channel_id = bot_config.chat_logs_channel
@@ -94,4 +94,4 @@ class ChatLogs(Observer[ChatEvent | None]):
     def on_next(self, value: ChatEvent | None):
         if value is None:
             return
-        asyncio.create_task(self.send_chat_log(value))
+        backtask(self.send_chat_log(value))

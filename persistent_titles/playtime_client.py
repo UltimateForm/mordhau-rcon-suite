@@ -1,6 +1,6 @@
-import asyncio
 from reactivex import Observer
 from motor.motor_asyncio import AsyncIOMotorCollection
+from common.gc_shield import backtask
 from persistent_titles.data import SessionEvent
 from common import logger
 
@@ -31,6 +31,4 @@ class PlaytimeClient(Observer[SessionEvent]):
         return read.get("minutes", 0) if read else 0
 
     def on_next(self, value: SessionEvent):
-        asyncio.create_task(
-            self.add_playtime(value.user_name, value.playfab_id, value.minutes)
-        )
+        backtask(self.add_playtime(value.user_name, value.playfab_id, value.minutes))

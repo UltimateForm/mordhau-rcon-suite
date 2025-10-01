@@ -1,4 +1,3 @@
-import asyncio
 import discord
 from datetime import datetime, timezone
 from motor.motor_asyncio import (
@@ -6,6 +5,7 @@ from motor.motor_asyncio import (
 )
 from table2ascii import table2ascii as t2a
 from boards.base import Board
+from common.gc_shield import backtask
 from config_client.data import bot_config
 from common.compute import compute_time_txt, human_format
 from rank_compute.kills import update_achieved_ranks
@@ -75,7 +75,7 @@ class KillsScoreboard(Board):
             .limit(20)
             .to_list()
         )
-        asyncio.create_task(self.update_achieved_ranks(top_20_items))
+        backtask(self.update_achieved_ranks(top_20_items))
         ascii_table = (
             "```"
             + t2a(
@@ -102,6 +102,6 @@ Data has been collecting since 11/20/2024
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
-            asyncio.create_task(self.write_msg_id())
+            backtask(self.write_msg_id())
         else:
             await self._current_message.edit(embed=embed)

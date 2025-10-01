@@ -105,13 +105,14 @@ class RconClient:
 
     async def rewarm(self):
         async with self._cmd_lock:
-            self._writer.write(
-                RconPacket(
-                    self.build_packet_id(), SERVERDATA_EXECCOMMAND, "alive"
-                ).pack()
-            )
-            self.used = time.time()
-            await self._writer.drain()
+            async with asyncio.timeout(10):
+                self._writer.write(
+                    RconPacket(
+                        self.build_packet_id(), SERVERDATA_EXECCOMMAND, "alive"
+                    ).pack()
+                )
+                self.used = time.time()
+                await self._writer.drain()
 
     async def get_connection(self):
         conn: tuple[asyncio.StreamReader, asyncio.StreamWriter]

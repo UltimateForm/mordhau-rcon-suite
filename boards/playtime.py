@@ -1,4 +1,3 @@
-import asyncio
 import discord
 from datetime import datetime, timezone
 from motor.motor_asyncio import (
@@ -8,6 +7,8 @@ from table2ascii import table2ascii as t2a
 from boards.base import Board
 
 from common.compute import compute_time_txt
+from common.discord import make_embed
+from common.gc_shield import backtask
 
 
 class PlayTimeScoreboard(Board):
@@ -69,6 +70,6 @@ Data has been collecting since 5/25/2024
         )
         if not self._current_message:
             self._current_message = await self._channel.send(embed=embed)
-            asyncio.create_task(self.write_msg_id())
+            backtask(self.write_msg_id())
         else:
             await self._current_message.edit(embed=embed)

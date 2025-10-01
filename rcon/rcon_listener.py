@@ -1,5 +1,6 @@
 import asyncio
 from reactivex import Subject, operators
+from common.gc_shield import backtask
 from rcon.rcon import RconClient
 from common import logger
 
@@ -54,7 +55,7 @@ class RconListener(Subject[str], RconClient):
                 for event in events_to_listen:
                     r = await self.execute(f"listen {event}")
                     logger.info(f"{self._event} listener: {r}")
-            rewarm_task = asyncio.create_task(self.warmer())
+            rewarm_task = backtask(self.warmer())
             while True:
                 pck = await self.recv_pkt()
                 logger.debug(f"{self._event} listener received event: {pck.body}")
