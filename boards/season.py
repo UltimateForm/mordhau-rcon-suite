@@ -26,7 +26,7 @@ class SeasonScoreboard(Board):
 
     @property
     def active(self) -> bool:
-        return Boolean(self._season_cfg) and self._season_cfg.is_active  # type: ignore
+        return Boolean(self._season_cfg) and self._season_cfg.is_active
 
     @property
     def season_name(self) -> str:

@@ -400,6 +400,4 @@ def register_cfg_dc_commands(bot: commands.Bot):
     pt.command(
         "exportNight",
         description="exports persistent titles config in format compatible with Night's mods i.e. https://mod.io/g/mordhau/m/playtime-tracker",
-    )(
-        export_night  # type: ignore# type: ignore
-    )
+    )(export_night)

@@ -74,9 +74,7 @@ def register_dc_player_commands(
 
     bot.command(
         "kdr", description="gets kdr score for player", usage="<playfab_id_or_username>"
-    )(
-        kdr
-    )  # type: ignore
+    )(kdr)
 
     async def skdr(ctx: Context, argument: str):
         collection = db["kills"]
