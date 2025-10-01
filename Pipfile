@@ -20,8 +20,8 @@ faker = "*"
 flake8 = "*"
 flake8-async = "*"
 pytest = "*"
-faker = "*"
 pyright = "*"
+types-aiofiles = "*"
 
 [scripts]
 lint = "flake8"

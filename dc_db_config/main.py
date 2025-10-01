@@ -40,7 +40,7 @@ class DcDbConfig(commands.Cog):
         embed = common_make_embed(str(ctx.command), color=discord.Colour(2899536))
         return embed
 
-    @commands.group(invoke_without_command=False, description="DB admin commands")  # type: ignore
+    @commands.group(invoke_without_command=False, description="DB admin commands")
     async def db(self, ctx: commands.Context):
         if ctx.subcommand_passed is None:
             helper = self._client.get_cog("BotHelper")

@@ -41,9 +41,7 @@ class ChatLogs(Observer[ChatEvent | None]):
             description="send message to ingame chat",
             usage="<message>",
             help="ay yo, it's ya boi from discord comming at you with a new message",
-        )(
-            self.say  # type: ignore
-        )
+        )(self.say)
         say_cmd.add_check(channel_checker(self._channel_id))
         super().__init__()
 
