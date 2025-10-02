@@ -8,14 +8,14 @@ from persistent_titles.playtime_client import PlaytimeClient
 from persistent_titles.dc_config import register_cfg_dc_commands
 from common.parsers import parse_date
 from common import logger
-from config_client.data import pt_config
+from config_client.data import pt_config, bot_config
 from discord.ext.commands import Bot
 
 from rcon.rcon_pool import RconConnectionPool
 
 
 class PersistentTitles:
-    login_observer: LoginObserver
+    login_observer: LoginObserver | None
     _login_observable: Observable[LoginEvent | None]
 
     def __init__(
@@ -27,18 +27,20 @@ class PersistentTitles:
         live_sessions_collection: AsyncIOMotorCollection | None = None,
     ):
         self._login_observable = login_observable
-        self.login_observer = LoginObserver(rcon_pool, pt_config)
-        self._login_observable.subscribe(self.login_observer)
+        if not bot_config.ingame_persistent_titles_disabled:
+            self.login_observer = LoginObserver(rcon_pool, pt_config)
+            self._login_observable.subscribe(self.login_observer)
         if bot:
             register_cfg_dc_commands(bot)
 
         playtime_client: PlaytimeClient | None = None
         if live_sessions_collection is not None and playtime_collection is not None:
-            logger.info("Enabling playtime titles as DB is loaded")
+            logger.info("Enabling playtime tracking as DB is loaded")
             playtime_client = PlaytimeClient(playtime_collection)
         else:
-            logger.info("Keeping playtime titles disabled as DB is not loaded")
-        self.login_observer.playtime_client = playtime_client
+            logger.info("Keeping playtime tracking disabled as DB is not loaded")
+        if self.login_observer:
+            self.login_observer.playtime_client = playtime_client
         if (
             live_sessions_collection is not None
             and playtime_collection is not None

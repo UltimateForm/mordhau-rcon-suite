@@ -90,6 +90,7 @@ class BotConfig(IOBoundDataclass):
     info_refresh_time: Optional[int] = None
     season_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
+    ingame_persistent_titles_disabled: Optional[bool] = False
     chat_logs_channel: Optional[int] = None
     title: Optional[str] = None
     boards_min_to_format: Optional[int] = 100000

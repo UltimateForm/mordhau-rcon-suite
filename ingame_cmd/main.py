@@ -13,13 +13,16 @@ from rcon.rcon_pool import RconConnectionPool
 
 
 class IngameCommands(Observer[ChatEvent | None]):
-    _config: PtConfig
+    _config: PtConfig | None
     _playtime_collection: AsyncIOMotorCollection
     _kills_collection: AsyncIOMotorCollection
     _rcon_pool: RconConnectionPool
 
     def __init__(
-        self, config: PtConfig, db: AsyncIOMotorDatabase, rcon_pool: RconConnectionPool
+        self,
+        config: PtConfig | None,
+        db: AsyncIOMotorDatabase,
+        rcon_pool: RconConnectionPool,
     ) -> None:
         self._playtime_collection = db["playtime"]
         self._kills_collection = db["kills"]
@@ -50,6 +53,8 @@ class IngameCommands(Observer[ChatEvent | None]):
         await self.rcon_say(full_msg)
 
     async def handle_rank(self, playfab_id: str, user_name: str):
+        if not self._config:
+            return
         user_playtime = await get_playtime(playfab_id, self._playtime_collection)
         if user_playtime is None or user_playtime.minutes < 1:
             full_msg = f"{user_name} has no recorded playtime"
@@ -127,9 +132,9 @@ class IngameCommands(Observer[ChatEvent | None]):
             return
         playfab_id = event_data.player_id
         user_name = event_data.user_name
-        if message == ".playtime":
+        if message == ".playtime" and self._config:
             backtask(self.handle_playtime(playfab_id, user_name))
-        elif message == ".rank":
+        elif message == ".rank" and self._config:
             backtask(self.handle_rank(playfab_id, user_name))
         elif message == ".kdr":
             backtask(self.handle_kdr(playfab_id, user_name))

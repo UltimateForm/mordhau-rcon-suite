@@ -118,6 +118,11 @@ class MordhauRconSuite:
         logger.debug(f"handle_tag_for_removed_rex {event}")
         if event.event_type != "removed":
             return
+        if (
+            self.peristent_titles is None
+            or self.peristent_titles.login_observer is None
+        ):
+            return
         backtask(
             self.peristent_titles.login_observer.handle_tag(
                 LoginEvent("Login", "", event.user_name, event.playfab_id, "in")
@@ -179,6 +184,7 @@ class MordhauRconSuite:
 
             self.matchstate_events.subscribe(reset_migrant_title)
             self.migrant_titles.rex_compute.subscribe(self._handle_tag_for_removed_rex)
+
         self.peristent_titles = PersistentTitles(
             self.rcon_pool,
             self.login_events,
@@ -188,7 +194,13 @@ class MordhauRconSuite:
         )
 
         self.ingame_commands = IngameCommands(
-            self._pt_config, self._database, self.rcon_pool
+            (
+                self._pt_config
+                if not self._bot_config.ingame_persistent_titles_disabled
+                else None
+            ),
+            self._database,
+            self.rcon_pool,
         )
         self.db_kills = DbKills(
             self.kills_collection,

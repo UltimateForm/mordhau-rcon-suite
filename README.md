@@ -45,9 +45,6 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Ingame features](#ingame-features)
       - [.env Config](#env-config)
       - [FAQ](#faq)
-  - [Migration to Night's mods](#migration-to-nights-mods)
-    - [Exporting playtime data](#exporting-playtime-data)
-    - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
   - [Chat logs](#chat-logs)
   - [Ingame commands](#ingame-commands)
   - [Discord usage](#discord-usage)
@@ -60,6 +57,10 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
         - [Seasonal kill records](#seasonal-kill-records)
+  - [Migration to Night's mods](#migration-to-nights-mods)
+    - [Exporting playtime data](#exporting-playtime-data)
+    - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
+    - [Post-migration](#post-migration)
   - [IMPORTANT NOTES](#important-notes)
 
 ## Setup
@@ -103,6 +104,7 @@ Here's how the config is loaded:
     18. KS_ENABLED (optional, 1 for enabled, 0 for disabled, default disabled)
     19. CHAT_LOGS_CHANNEL (optional, channel to post chat logs)
     20. USE_BULK_LISTENER (optional, 1 for enabled, 0 for disabled, recommended enabled, uses a single RCON connection to track killfeed, chat, login, matchstate events)
+    21. INGAME_PERSISTENT_TITLES_DISABLED (optional, 1 for true, 0 for false, disables ingame persistent titles features, will still work on discord)
 
 ##### example
 
@@ -339,80 +341,6 @@ Make sure your instance is located geographically close to bot for best performa
       }
       ```
 
-## Migration to Night's mods
-
-Night has the following serverside mods available:
-
-- CosmeticRanks https://mod.io/g/mordhau/m/cosmetic-ranks
-- PlaytimeTracker https://mod.io/g/mordhau/m/playtime-tracker
-
-A serverside mod might be preferable for your server in alternative to what this bot does, RCON based tracking, especially if your server's RCON is already very noisy.
-
-You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to Night's mods. Note that Night's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
-
-### Exporting playtime data
-
-- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [Night's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
-
-sample export:
-```json
-{
-  "D1230AA0B615K12E": 10.05,
-  "30C4D00A3A64CC50": 2.0166666666666666,
-  "5F958D6D47F02B23": 0.31666666666666665,
-  "470BC011D174DA43": 0.016666666666666666,
-  "54296FFB37437C16": 0.03333333333333333,
-  "86978C43BB55F715": 0.16666666666666666,
-  "64C006A614CD85B9": 9.516666666666667
-}
-```
-
-### Exporting playtime and custom ranks
-
-- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
-
-sample export:
-```json
-{
-  "Ranks": [
-    {
-      "Name": "Expert",
-      "Weight": 100,
-      "Prefix": "[Expert] ",
-      "GiveOnPlaytime": 5.0
-    },
-    {
-      "Name": "Veteran",
-      "Weight": 200,
-      "Prefix": "[Veteran] ",
-      "GiveOnPlaytime": 2.0
-    },
-    {
-      "Name": "Squire",
-      "Weight": 300,
-      "Prefix": "[Squire] ",
-      "GiveOnPlaytime": 1.0
-    },
-    {
-      "Name": "Initiant",
-      "Weight": 500,
-      "Prefix": "[Initiant] ",
-      "GiveOnPlaytime": 0.5
-    },
-    {
-      "Name": "FFAer",
-      "Weight": 50,
-      "Prefix": "[FFAer] "
-    }
-  ],
-  "PlayerRanks": [
-    {
-      "PlayfabID": "64C006A614CD85B9",
-      "Rank": "FFAer"
-    }
-  ]
-}
-```
 
 ## Chat logs
 
@@ -611,10 +539,105 @@ To conclude a season:
 2. delete the season
    - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
 
+## Migration to Night's mods
+
+Night has the following serverside mods available:
+
+- CosmeticRanks https://mod.io/g/mordhau/m/cosmetic-ranks
+- PlaytimeTracker https://mod.io/g/mordhau/m/playtime-tracker
+
+A serverside mod might be preferable for your server in alternative to what this bot does, RCON based tracking, especially if your server's RCON-hungry.
+
+You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to Night's mods. Note that Night's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
+
+These are the features that can be migrated:
+
+- playtime tracking
+  - Night's playtime tracker has a weight system that be leveraged to establish plyatime titles priorities
+- player tags
+  - Night's CosmeticRanks supports a system of player ranks that fulfils almost the same purpose, it has some different behaviors on the configuration side but mostly should behave the same
+- migrating titles
+  - Night's CosmeticRanks support migrating ranks, these too are augmented by the weight system, no tooling is offered here to help you migrate this as it should be a simple manual process to configure it on Night's CosmeticRanks
+
+
+### Exporting playtime data
+
+- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [Night's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
+
+sample export:
+```json
+{
+  "D1230AA0B615K12E": 10.05,
+  "30C4D00A3A64CC50": 2.0166666666666666,
+  "5F958D6D47F02B23": 0.31666666666666665,
+  "470BC011D174DA43": 0.016666666666666666,
+  "54296FFB37437C16": 0.03333333333333333,
+  "86978C43BB55F715": 0.16666666666666666,
+  "64C006A614CD85B9": 9.516666666666667
+}
+```
+
+### Exporting playtime and custom ranks
+
+- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
+
+sample export:
+```json
+{
+  "Ranks": [
+    {
+      "Name": "Expert",
+      "Weight": 100,
+      "Prefix": "[Expert] ",
+      "GiveOnPlaytime": 5.0
+    },
+    {
+      "Name": "Veteran",
+      "Weight": 200,
+      "Prefix": "[Veteran] ",
+      "GiveOnPlaytime": 2.0
+    },
+    {
+      "Name": "Squire",
+      "Weight": 300,
+      "Prefix": "[Squire] ",
+      "GiveOnPlaytime": 1.0
+    },
+    {
+      "Name": "Initiant",
+      "Weight": 500,
+      "Prefix": "[Initiant] ",
+      "GiveOnPlaytime": 0.5
+    },
+    {
+      "Name": "FFAer",
+      "Weight": 50,
+      "Prefix": "[FFAer] "
+    }
+  ],
+  "PlayerRanks": [
+    {
+      "PlayfabID": "64C006A614CD85B9",
+      "Rank": "FFAer"
+    }
+  ]
+}
+```
+
+### Post-migration
+
+- after migrating playtime tracking to Night's, make sure you disable ingame Playtime tracking **ingame** features, by setting the following settings
+  - `ingame_persistent_titles_disabled: true` if you're using bot.config.json
+  - `INGAME_PERSISTENT_TITLES_DISABLED=1` if you're using .env
+
+- after migrating migrating title to Night's make sure you disable this bot's migrating titles by removing the following setting
+  - `title` if you're using bot.config.json
+  - `TITLE` if you're using .env
+
+
 ## IMPORTANT NOTES
 1. This bot doesn't use (yet) the native discord commands
-2. This bot hasn't been stress tested, a previous version has been tested on a server with 20-40 players, but was different code
-3. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
-4. this BOT is RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)
-5. CPU usage problems have been reported for this bot, refrain from using this if your CPU is weak
-6. Abitrary values on RconTimeout in Game.ini will result in umpredictable RconIssues, you're advised to change it to a standard value i.e. RconTimeout=120.000000 (this one is known to work)
+2. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
+3. this BOT can become RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)
+4. CPU usage problems have been reported for this bot, refrain from using this if your CPU is weak
+5. Abitrary values on RconTimeout in Game.ini will result in umpredictable RconIssues, you're advised to change it to a standard value i.e. RconTimeout=120.000000 (this one is known to work)
