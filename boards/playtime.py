@@ -7,7 +7,6 @@ from table2ascii import table2ascii as t2a
 from boards.base import Board
 
 from common.compute import compute_time_txt
-from common.discord import make_embed
 from common.gc_shield import backtask
 
 

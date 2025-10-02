@@ -3,7 +3,6 @@ from itertools import takewhile
 from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
-from common.discord import make_embed
 from common.gc_shield import backtask
 from rcon.rcon_pool import RconConnectionPool
 import discord
