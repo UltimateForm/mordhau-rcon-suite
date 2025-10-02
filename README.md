@@ -2,15 +2,11 @@
 
 ![botimage](public/rconsuite.png)
 
-![botimage](public/rconsuite.png)
-
 This bot is a manual fork of https://github.com/UltimateForm/mordhauTitles which adds the following new features:
 - recording kills
   - and broadcasting killstreaks
 - sending scoreboards to discord
   - kills
-    - including seasonal leaderboards
-    - including achievements
     - including seasonal leaderboards
     - including achievements
   - playtime
@@ -97,15 +93,10 @@ Here's how the config is loaded:
     7. PLAYTIME_REFRESH_TIME (optional, time interval in seconds for playtime scoreboard update)
     8. KILLS_CHANNEL (optional, channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
     9. KILLS_REFRESH_TIME (optional, time interval in seconds for kills/death/ratio scoreboard update)
-    6. PLAYTIME_CHANNEL (optional, channel to post playtime scoreboard, read more at [boards](#boards))
-    7. PLAYTIME_REFRESH_TIME (optional, time interval in seconds for playtime scoreboard update)
-    8. KILLS_CHANNEL (optional, channel to post kills/death/ratio scoreboard, read more at [boards](#boards))
-    9. KILLS_REFRESH_TIME (optional, time interval in seconds for kills/death/ratio scoreboard update)
     10. INFO_CHANNEL (optional, channel to post server info)
     11. INFO_REFRESH_TIME (optional, time in seconds to refresh server info card)
     12. D_TOKEN (discord bot auth token)
     13. TITLE (optional)
-    14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to admin commands, check [this section](#commands))
     14. CONFIG_BOT_CHANNEL (id of channel to limit config commands to one channel, only applies to admin commands, check [this section](#commands))
     15. DB_CONNECTION_STRING (for [playtime titles](#playtime-titles) and kill records)
     16. EMBED_FOOTER_TXT (optional, line to add to footer of all embeds, by default it is source code repo link)
@@ -361,7 +352,6 @@ If you have the setting chat logs enabled (refer back to [configuration chapter]
 If someone writes @admin as part of their chat message the bot will mention @here in the discord channel.
 
 Check [commands](#commands) for how to use the `say` command which will send messages from discord into game.
-Check [commands](#commands) for how to use the `say` command which will send messages from discord into game.
 
 
 ## Ingame commands
@@ -456,8 +446,8 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 #### Admin Season config commands (.season)
 
 - **channel_id**: set channel (by id) to send season score board
-  - usage: `.season channel_id <channel_id>`
-  - example: `.season channel_id 2912891271860`
+  - usage: `.season channel <channel_id>`
+  - example: `.season channel 2912891271860`
 - **delete**: delete configured season
 - **info**: get info about current configured season
 - **create**: create season, currently only supported season_type is `kdr`, name should not have spaces 
