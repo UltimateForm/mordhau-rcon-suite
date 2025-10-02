@@ -61,7 +61,10 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
         - [Seasonal kill records](#seasonal-kill-records)
-        - [Seasonal kill records](#seasonal-kill-records-1)
+  - [Migration to Night's mods](#migration-to-nights-mods)
+    - [Exporting playtime data](#exporting-playtime-data)
+    - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
+    - [Post-migration](#post-migration)
   - [IMPORTANT NOTES](#important-notes)
 
 ## Setup
@@ -546,36 +549,104 @@ To conclude a season:
 2. delete the season
    - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
 
-##### Seasonal kill records
+## Migration to Night's mods
 
-The default KDR board is a persistent one, which might leave new players out of the board forever unless older players stop playing. To keep the competition fresh, you can add seasonal leaderboards that have a limited time and start counting from 0. Below are the steps for configuring a season.
+Night has the following serverside mods available:
 
-The command examples will use example arguments. You will want to replace the arguments to match your desired season configuration.
+- CosmeticRanks https://mod.io/g/mordhau/m/cosmetic-ranks
+- PlaytimeTracker https://mod.io/g/mordhau/m/playtime-tracker
 
-1. create season 
-   - `.season kdr SeasonName` Replace "SeasonName" with your chosen name. The name must not contain spaces
-2. set discord channel for the season leaderboard
-   - `.season channel 3125613635231412341` Replace the numbers with the channel ID of the channel where you want the season leaderboard posted
-3. configure season leaderboard
-   - `.season embed title "Season Name"` by default the leaderboard will have the name you configured in step 1. This command allows you to customize it further. See the name from step 1 more like an "id" than an actual presentation name
-   - `.season embed description "This is the season description"` by default the leaderboard embed will have no description. You can use this command to set one
-   - `.season embed image_url https://i.imgur.com/zSJgfAT.jpeg` this will set an image to be shown on the leaderboard
-   - `.season embed footer_txt "Some text you want to show at the bottom of the leaderboard"` you can use this command to set some text under the leaderboard
-4. inspect season info
-   - `.season info` this will output info about your currently configured season
-5. start season
-   - `.season start`
+A serverside mod might be preferable for your server in alternative to what this bot does, RCON based tracking, especially if your server's RCON-hungry.
 
-After these steps the bot will send the board to your configured channel in step 2 and start tracking player kills.
+You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to Night's mods. Note that Night's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
 
-To conclude a season:
+These are the features that can be migrated:
 
-1. end the season
-   - `.season end` this will also update achievements for players who participated
-2. delete the season
-   - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
+- ingame playtime tracking
+  - Night's playtime tracker has a weight system that be leveraged to establish plyatime titles priorities
+- ingame player tags
+  - Night's CosmeticRanks supports a system of player ranks that fulfils almost the same purpose, it has some different behaviors on the configuration side but mostly should behave the same
+- ingame migrating titles
+  - Night's CosmeticRanks support migrating ranks, these too are augmented by the weight system, no tooling is offered here to help you migrate this as it should be a simple manual process to configure it on Night's CosmeticRanks
+
+
+### Exporting playtime data
+
+- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [Night's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
+
+sample export:
+```json
+{
+  "D1230AA0B615K12E": 10.05,
+  "30C4D00A3A64CC50": 2.0166666666666666,
+  "5F958D6D47F02B23": 0.31666666666666665,
+  "470BC011D174DA43": 0.016666666666666666,
+  "54296FFB37437C16": 0.03333333333333333,
+  "86978C43BB55F715": 0.16666666666666666,
+  "64C006A614CD85B9": 9.516666666666667
+}
+```
+
+### Exporting playtime and custom ranks
+
+- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
+
+sample export:
+
+```json
+{
+  "Ranks": [
+    {
+      "Name": "Expert",
+      "Weight": 100,
+      "Prefix": "[Expert] ",
+      "GiveOnPlaytime": 5.0
+    },
+    {
+      "Name": "Veteran",
+      "Weight": 200,
+      "Prefix": "[Veteran] ",
+      "GiveOnPlaytime": 2.0
+    },
+    {
+      "Name": "Squire",
+      "Weight": 300,
+      "Prefix": "[Squire] ",
+      "GiveOnPlaytime": 1.0
+    },
+    {
+      "Name": "Initiant",
+      "Weight": 500,
+      "Prefix": "[Initiant] ",
+      "GiveOnPlaytime": 0.5
+    },
+    {
+      "Name": "FFAer",
+      "Weight": 50,
+      "Prefix": "[FFAer] "
+    }
+  ],
+  "PlayerRanks": [
+    {
+      "PlayfabID": "64C006A614CD85B9",
+      "Rank": "FFAer"
+    }
+  ]
+}
+```
+
+### Post-migration
+
+- after migrating playtime tracking to Night's, make sure you disable ingame Playtime tracking **ingame** features, by setting the following settings
+  - `ingame_persistent_titles_disabled: true` if you're using bot.config.json
+  - `INGAME_PERSISTENT_TITLES_DISABLED=1` if you're using .env
+
+- after migrating migrating title to Night's make sure you disable this bot's migrating titles by removing the following setting
+  - `title` if you're using bot.config.json
+  - `TITLE` if you're using .env
 
 ## IMPORTANT NOTES
+
 1. This bot doesn't use (yet) the native discord commands
 2. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
 3. this BOT can become RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)
