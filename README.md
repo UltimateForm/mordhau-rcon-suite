@@ -552,11 +552,11 @@ You have some utilities on this bot that should help you migrate playtime tracki
 
 These are the features that can be migrated:
 
-- playtime tracking
+- ingame playtime tracking
   - Night's playtime tracker has a weight system that be leveraged to establish plyatime titles priorities
-- player tags
+- ingame player tags
   - Night's CosmeticRanks supports a system of player ranks that fulfils almost the same purpose, it has some different behaviors on the configuration side but mostly should behave the same
-- migrating titles
+- ingame migrating titles
   - Night's CosmeticRanks support migrating ranks, these too are augmented by the weight system, no tooling is offered here to help you migrate this as it should be a simple manual process to configure it on Night's CosmeticRanks
 
 
@@ -582,6 +582,7 @@ sample export:
 - run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
 
 sample export:
+
 ```json
 {
   "Ranks": [
@@ -634,8 +635,8 @@ sample export:
   - `title` if you're using bot.config.json
   - `TITLE` if you're using .env
 
-
 ## IMPORTANT NOTES
+
 1. This bot doesn't use (yet) the native discord commands
 2. consider restarting this bot every 2-3 days, long rcon connections can become unpredictable
 3. this BOT can become RCON intensive, expect abnormalities if you have other RCON bots running at same time as this one during resource expensive periods (i.e. 40+ players)
