@@ -3,9 +3,9 @@ from enum import Enum
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
 )
-import asyncio
 
 from common import logger
+from common.gc_shield import backtask
 from config_client.models import SeasonConfig
 from rank_compute.kills import update_achieved_ranks
 
@@ -37,9 +37,9 @@ class SeasonWatch(reactivex.Observer[SeasonEvent]):
             or value == SeasonEvent.CREATE
             or value == SeasonEvent.START
         ):
-            asyncio.create_task(self.load_config())
+            backtask(self.load_config())
         elif value == SeasonEvent.END:
-            asyncio.create_task(self.on_season_end())
+            backtask(self.on_season_end())
 
     async def load_config(self):
         try:

@@ -10,17 +10,18 @@ reactivex = "*"
 dacite = "*"
 python-dotenv = "*"
 numpy = "*"
-motor = "*"
 table2ascii = "*"
 aiofiles = "*"
 py-cord = "*"
+motor = "*"
+faker = "*"
 
 [dev-packages]
 flake8 = "*"
 flake8-async = "*"
 pytest = "*"
-faker = "*"
 pyright = "*"
+types-aiofiles = "*"
 
 [scripts]
 lint = "flake8"

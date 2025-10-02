@@ -90,6 +90,7 @@ class BotConfig(IOBoundDataclass):
     info_refresh_time: Optional[int] = None
     season_refresh_time: Optional[int] = None
     ks_enabled: Optional[bool] = False
+    ingame_persistent_titles_disabled: Optional[bool] = False
     chat_logs_channel: Optional[int] = None
     title: Optional[str] = None
     boards_min_to_format: Optional[int] = 100000
@@ -101,7 +102,7 @@ class BotConfig(IOBoundDataclass):
     d_token: str = ""
     db_connection_string: str = "mongodb+srv://user:password@0.0.0.0"
     db_name: str = "db"
-    experimental_bulk_listener: bool = False
+    use_bulk_listener: bool = True
 
     def info_board_enabled(self):
         return bool(self.info_channel)
@@ -159,8 +160,8 @@ class BotConfig(IOBoundDataclass):
 
 @dataclass
 class PtConfig(IOBoundDataclass):
-    tags: dict[str, str]
-    salutes: dict[str, str]
+    tags: dict[str, str] = field(default_factory=dict)
+    salutes: dict[str, str] = field(default_factory=dict)
     playtime_tags: dict[str, str] = field(default_factory=dict)
     rename: dict[str, str] | None = field(default_factory=dict)
     tag_format: str = "[{0}]"

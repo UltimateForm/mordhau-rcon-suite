@@ -1,15 +1,27 @@
-import asyncio
 from datetime import timezone, datetime
 from itertools import takewhile
 from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
 from common.discord import make_embed
-from rcon.rcon import RconContext
+from common.gc_shield import backtask
+from rcon.rcon_pool import RconConnectionPool
 import discord
 
 
 class InfoBoard(Board):
+
+    rcon_pool: RconConnectionPool
+
+    def __init__(
+        self,
+        rcon_pool: RconConnectionPool,
+        client: discord.Client,
+        channel_id: int,
+        time_interval: int | None = 60,
+    ):
+        super().__init__(client, channel_id, time_interval)
+        self.rcon_pool = rcon_pool
 
     @property
     def file_path(self) -> str:
@@ -21,12 +33,21 @@ class InfoBoard(Board):
                 raise ValueError(
                     "{self.__class__.__name__}: Channel {self._channel_id} not loaded"
                 )
-            server_info_raw: str = ""
-            player_list_raw: str = ""
-            async with asyncio.timeout(30):
-                async with RconContext() as client:
-                    server_info_raw = await client.execute("info")
-                    player_list_raw = await client.execute("playerlist")
+            server_info_raw = ""
+            player_list_raw = ""
+            client = await self.rcon_pool.get_client()
+            try:
+                server_info_raw = await client.execute("info")
+                player_list_raw = await client.execute("playerlist")
+            except Exception as e:
+                logger.error(
+                    f"[InfoBoard] Error obtaining server info and playerlist: {e}"
+                )
+                client.used = 120
+                raise e
+            finally:
+                await self.rcon_pool.release_client(client)
+
             server_info = parsers.parse_server_info(server_info_raw)
             if not server_info:
                 raise ValueError(f"Failed to parse server info: {server_info_raw}")
@@ -64,7 +85,7 @@ class InfoBoard(Board):
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
-                asyncio.create_task(self.write_msg_id())
+                backtask(self.write_msg_id())
             else:
                 await self._current_message.edit(embed=embed)
         except Exception as e:

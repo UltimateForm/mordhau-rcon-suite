@@ -1,11 +1,13 @@
 import asyncio
 from dataclasses import dataclass
 from reactivex import Observable, Subject
+from common.gc_shield import backtask
 from common.models import KillfeedEvent, PlayerStore
 from config_client.data import pt_config, bot_config
-from rcon.rcon import RconContext
 from common import logger
 import random
+
+from rcon.rcon_pool import RconConnectionPool
 
 DEFAULT_REX_TITLE = "REX"
 
@@ -37,15 +39,25 @@ class TitleCompute(Subject[MigrantComputeEvent]):
     current_rex: str = ""
     rex_tile: str = ""
     _player_store: PlayerStore
+    _rcon_pool: RconConnectionPool
 
-    def __init__(self, player_store: PlayerStore):
+    def __init__(self, player_store: PlayerStore, rcon_pool: RconConnectionPool):
         self.rex_tile = bot_config.title or DEFAULT_REX_TITLE
         self._player_store = player_store
+        self._rcon_pool = rcon_pool
         super().__init__()
 
     async def _execute_command(self, command: str) -> None:
-        async with RconContext() as client:
+        client = await self._rcon_pool.get_client()
+        try:
             await client.execute(command)
+        except Exception as e:
+            logger.info(
+                f"[TitleCompute] Rcon client {client.id} failed to execute command `{command}`, expiring client"
+            )
+            raise e
+        finally:
+            await self._rcon_pool.release_client(client)
 
     def _sanitize_name(self, playfab_id: str, current_name: str):
         login_username = self._player_store.players.get(playfab_id, None)
@@ -55,7 +67,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
 
     def _remove_rex(self, playfab_id: str, user_name):
         target_name = self._sanitize_name(playfab_id, user_name)
-        task = asyncio.create_task(
+        task = backtask(
             self._execute_command(f"renameplayer {playfab_id} {target_name}")
         )
 
@@ -73,7 +85,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
         target_name = self._sanitize_name(playfab_id, user_name)
         await self._execute_command(
             f"renameplayer {playfab_id} [{self.rex_tile}] {target_name}"
-        ),
+        )
         self.on_next(MigrantComputeEvent("placed", playfab_id, target_name))
 
     def _process_killfeed_event(self, event_data: KillfeedEvent | None):
@@ -88,14 +100,14 @@ class TitleCompute(Subject[MigrantComputeEvent]):
                 empty_tile_msg = self._get_migrancy_text(
                     VACANCY_MIGRANCY_TEMPLATES, killer, killed
                 )
-                asyncio.create_task(self._execute_command(f"say {empty_tile_msg}"))
-                asyncio.create_task(self._place_rex(killer_playfab_id, killer))
+                backtask(self._execute_command(f"say {empty_tile_msg}"))
+                backtask(self._place_rex(killer_playfab_id, killer))
                 self.current_rex = killer_playfab_id
             elif killed_playfab_id and self.current_rex == killed_playfab_id:
                 title_msg = self._get_migrancy_text(MIGRANCY_TEMPLATES, killer, killed)
-                asyncio.create_task(self._execute_command(f"say {title_msg}"))
+                backtask(self._execute_command(f"say {title_msg}"))
                 if killer_playfab_id:
-                    asyncio.create_task(self._place_rex(killer_playfab_id, killer))
+                    backtask(self._place_rex(killer_playfab_id, killer))
                 self._remove_rex(killed_playfab_id, killed)
                 self.current_rex = killer_playfab_id
             elif (
@@ -108,7 +120,7 @@ class TitleCompute(Subject[MigrantComputeEvent]):
             # note: uncomment this for solo debug
             # elif killer_playfab_id == self.current_rex:
             #     self.current_rex = ""
-            #     asyncio.create_task(
+            #     backtask(
             #         self._execute_command(
             #             f"say {killer} has defeated {killed} and claimed his {self.rex_tile} title"
             #         )
@@ -126,7 +138,8 @@ class MigrantTitles:
         self,
         killfeed_listener: Observable[KillfeedEvent | None],
         player_store: PlayerStore,
+        rcon_pool: RconConnectionPool,
     ):
         self._killfeed_observable = killfeed_listener
-        self.rex_compute = TitleCompute(player_store)
+        self.rex_compute = TitleCompute(player_store, rcon_pool)
         self._killfeed_observable.subscribe(self.rex_compute._process_killfeed_event)

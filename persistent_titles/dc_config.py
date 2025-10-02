@@ -7,6 +7,10 @@ from common.discord import (
     bot_config_channel_checker,
 )
 from config_client.data import pt_config, bot_config
+import time
+import io
+import os
+from aiofiles import open as aio_open
 
 
 def make_embed(ctx: commands.Context):
@@ -322,3 +326,78 @@ def register_cfg_dc_commands(bot: commands.Bot):
         await ctx.message.reply(embed=embed, content=json_code if too_long else None)
 
     pt.command("ptConf", description="show the persistent titles config")(get_config)
+
+    async def export_night(ctx: commands.Context):
+        embed = make_embed(ctx)
+        try:
+            playtime_tags = pt_config.playtime_tags
+            custom_ranks = pt_config.tags or {}
+
+            tag_items = [(int(minutes), tag) for minutes, tag in playtime_tags.items()]
+            tag_items.sort(key=lambda x: x[0], reverse=True)
+
+            ranks: list[dict] = []
+            player_ranks: list[dict] = []
+
+            base_weight = 100
+            for idx, (minutes, tag) in enumerate(tag_items):
+                hours = round(minutes / 60, 2)
+                ranks.append(
+                    {
+                        "Name": tag,
+                        "Weight": base_weight + idx * 100,
+                        "Prefix": pt_config.tag_format.format(tag) + " ",
+                        "GiveOnPlaytime": hours,
+                    }
+                )
+
+            export_obj = {"Ranks": ranks, "PlayerRanks": player_ranks}
+            for playfab_id, tag in custom_ranks.items():
+                if playfab_id == "*":
+                    continue
+
+                if not any(rank["Name"] == tag for rank in ranks):
+                    ranks.append(
+                        {
+                            "Name": tag,
+                            "Weight": 50,
+                            "Prefix": pt_config.tag_format.format(tag) + " ",
+                        }
+                    )
+                player_ranks.append(
+                    {
+                        "PlayfabID": playfab_id,
+                        "Rank": tag,
+                    }
+                )
+            json_str = json.dumps(export_obj, indent=2)
+            ti = int(time.time())
+            file_name = f"night_export_{ti}.json"
+            persist_dir = "./persist"
+            file_path = os.path.join(persist_dir, file_name)
+            async with aio_open(file_path, "w") as f:
+                await f.write(json_str)
+            file = discord.File(
+                fp=io.BytesIO(json_str.encode("utf-8")),
+                filename=file_name,
+                description="Exported Night's mod ranks data",
+            )
+            await ctx.message.reply(
+                f"Exported Night's mod ranks. Also written to `{file_path}`",
+                file=file,
+            )
+        except Exception as e:
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(type(e)), inline=False)
+            embed.add_field(
+                name="Hint",
+                value="File might have still exported, check `./persist` folder",
+                inline=False,
+            )
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
+
+    pt.command(
+        "exportNight",
+        description="exports persistent titles config in format compatible with Night's mods i.e. https://mod.io/g/mordhau/m/playtime-tracker",
+    )(export_night)
