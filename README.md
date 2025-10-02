@@ -57,7 +57,7 @@ If you need custom changes please reach out to me on discord or create an issue.
       - [Playtime records](#playtime-records)
       - [Kill records](#kill-records)
         - [Seasonal kill records](#seasonal-kill-records)
-  - [Migration to Night's mods](#migration-to-nights-mods)
+  - [Migration to NightV's mods](#migration-to-nightvs-mods)
     - [Exporting playtime data](#exporting-playtime-data)
     - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
     - [Post-migration](#post-migration)
@@ -124,7 +124,6 @@ KILLS_REFRESH_TIME=1800
 ```
 
 
-  
 #### b) via `./persist/bot.config.json`
 
 Create a file with name `bot.config.json` at folder `./persist/` and paste there the template provided below. Replace the square brackets and their content within with actual config values:
@@ -288,7 +287,7 @@ This a Discord X RCON bot that is used to implement persistent tags (via RCON's 
 
 ### What it do?
 
-This bot allows you to 
+This bot allows you to
 - have custom tags (or titles) in front of player's names, i.e. you can tag a player with name "FFAer" or "Champion". These tags will last until they're removed. **Note that if you add a tag to player while he is ingame he will need to either rejoin server or wait till next round for tag to take effect**
   - the difference between this and the much simpler rcon's `renameplayer` is that this one will persist across sessions, the tag will persist even after player logs out or round ends
 - have specific server messages automatically spawn when selected players join server
@@ -440,7 +439,7 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
 - **chg_name**: change a player's name in DB
   - usage: `.db chg_name <plafayb_id> <new_name>`
 - **metadata**: show metadata of db
-- **export_playtime**: export playtime data as json, compatible with server side mods such as Night's Playtime. Will also write the export to `./persist/` folder
+- **export_playtime**: export playtime data as json, compatible with server side mods such as NightV's Playtime. Will also write the export to `./persist/` folder
 
 
 #### Admin Season config commands (.season)
@@ -539,30 +538,30 @@ To conclude a season:
 2. delete the season
    - `.season delete` this step is really only necessary for enabling you to start a new one. Remember that deleting a season will not delete the data collected, it just deletes the configuration
 
-## Migration to Night's mods
+## Migration to NightV's mods
 
-Night has the following serverside mods available:
+NightV has the following serverside mods available:
 
 - CosmeticRanks https://mod.io/g/mordhau/m/cosmetic-ranks
 - PlaytimeTracker https://mod.io/g/mordhau/m/playtime-tracker
 
 A serverside mod might be preferable for your server in alternative to what this bot does, RCON based tracking, especially if your server's RCON-hungry.
 
-You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to Night's mods. Note that Night's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
+You have some utilities on this bot that should help you migrate playtime tracking and cosmetic ranks to NightV's mods. Note that NightV's mod doesn't have full feature parity with this bot, so it's not meant to be seen as a full replacement of this bot.
 
 These are the features that can be migrated:
 
 - ingame playtime tracking
-  - Night's playtime tracker has a weight system that be leveraged to establish plyatime titles priorities
+  - NightV's playtime tracker has a weight system that be leveraged to establish plyatime titles priorities
 - ingame player tags
-  - Night's CosmeticRanks supports a system of player ranks that fulfils almost the same purpose, it has some different behaviors on the configuration side but mostly should behave the same
+  - NightV's CosmeticRanks supports a system of player ranks that fulfils almost the same purpose, it has some different behaviors on the configuration side but mostly should behave the same
 - ingame migrating titles
-  - Night's CosmeticRanks support migrating ranks, these too are augmented by the weight system, no tooling is offered here to help you migrate this as it should be a simple manual process to configure it on Night's CosmeticRanks
+  - NightV's CosmeticRanks support migrating ranks, these too are augmented by the weight system, no tooling is offered here to help you migrate this as it should be a simple manual process to configure it on NightV's CosmeticRanks
 
 
 ### Exporting playtime data
 
-- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [Night's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
+- run admin discord command `.db export_playtime` this will export your playtime collection to a json file that you can then import into [NightV's playtime mod](https://mod.io/g/mordhau/m/playtime-tracker)
 
 sample export:
 ```json
@@ -579,7 +578,7 @@ sample export:
 
 ### Exporting playtime and custom ranks
 
-- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by Night's mods
+- run admin discord comand `.pt exportNight`, this will export your playtime and custom ranks to a json file that can be imported by NightV's mods
 
 sample export:
 
@@ -627,11 +626,11 @@ sample export:
 
 ### Post-migration
 
-- after migrating playtime tracking to Night's, make sure you disable ingame Playtime tracking **ingame** features, by setting the following settings
+- after migrating playtime tracking to NightV's, make sure you disable ingame Playtime tracking **ingame** features, by setting the following settings
   - `ingame_persistent_titles_disabled: true` if you're using bot.config.json
   - `INGAME_PERSISTENT_TITLES_DISABLED=1` if you're using .env
 
-- after migrating migrating title to Night's make sure you disable this bot's migrating titles by removing the following setting
+- after migrating migrating title to NightV's make sure you disable this bot's migrating titles by removing the following setting
   - `title` if you're using bot.config.json
   - `TITLE` if you're using .env
 
