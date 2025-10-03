@@ -15,7 +15,7 @@ from rcon.rcon_pool import RconConnectionPool
 
 
 class PersistentTitles:
-    login_observer: LoginObserver | None
+    login_observer: LoginObserver | None = None
     _login_observable: Observable[LoginEvent | None]
 
     def __init__(
