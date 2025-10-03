@@ -95,4 +95,7 @@ class Board(commands.Cog):
 
     @tasks.loop()
     async def job(self):
-        await self.send_board()
+        try:
+            await self.send_board()
+        except Exception as e:
+            logger.error(f"{self.__class__.__name__}: Error sending board: {e}")
