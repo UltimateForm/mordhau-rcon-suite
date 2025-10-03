@@ -1,4 +1,3 @@
-from xmlrpc.client import Boolean
 import discord
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
@@ -26,7 +25,7 @@ class SeasonScoreboard(Board):
 
     @property
     def active(self) -> bool:
-        return Boolean(self._season_cfg) and self._season_cfg.is_active
+        return bool(self._season_cfg) and self._season_cfg.is_active
 
     @property
     def season_name(self) -> str:

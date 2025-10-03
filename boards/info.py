@@ -3,7 +3,6 @@ from itertools import takewhile
 from boards.base import Board
 from common import logger, parsers
 from common.compute import compute_time_txt
-from common.discord import make_embed
 from common.gc_shield import backtask
 from rcon.rcon_pool import RconConnectionPool
 import discord
@@ -62,26 +61,30 @@ class InfoBoard(Board):
             players_block = "```" + players_text + "```"
             current_time = round(datetime.now(timezone.utc).timestamp())
             time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
-            embed = make_embed(
-                server_info.server_name,
+            embed = discord.Embed(
+                title=server_info.server_name,
                 description="\n".join([time_sig, self.announcement]),
-                color=discord.Colour(3447003),
-                footer_txt=f"Updates every {compute_time_txt(self._time_interval_mins)}",
+                color=discord.Colour(int("4800FF", 16)),
             )
-            num_players_onlines = len(players)
-            players_online = f"Players online: {num_players_onlines}"
+            num_players_online = len(players)
+            players_online = f"Players Online: {num_players_online}/55"
             await self._client.change_presence(
                 activity=discord.Activity(
                     type=discord.ActivityType.watching,
-                    name=f"{num_players_onlines} players online",
+                    name=f"({num_players_online}/55) Online!",
                 )
             )
-            embed.add_field(name="Gamemode", value=server_info.game_mode)
-            embed.add_field(name="Map", value=server_info.map)
+            embed.add_field(name="Gamemode:", value=server_info.game_mode)
+            embed.add_field(name="Current Map:", value=server_info.map)
             embed.add_field(
                 name=players_online,
                 value=players_block,
                 inline=False,
+            )
+            embed.set_footer(
+                text=f"""
+Updates every {compute_time_txt(self._time_interval_mins)}
+                    """
             )
             if not self._current_message:
                 self._current_message = await self._channel.send(embed=embed)
