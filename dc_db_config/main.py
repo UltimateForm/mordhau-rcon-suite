@@ -161,3 +161,55 @@ class DcDbConfig(commands.Cog):
             )
             embed.color = 15548997  # red
             await ctx.message.reply(embed=embed)
+
+    @db.command(
+        description="export kills/deaths data as json. Will also write the export to ./persist/ folder"
+    )
+    async def export_kills(self, ctx: commands.Context):
+        if (
+            self._cfg.config_bot_channel
+            and ctx.channel.id != self._cfg.config_bot_channel
+        ):
+            return
+        embed = self.make_embed(ctx)
+        try:
+            pipeline = [
+                {
+                    "$project": {
+                        "_id": 0,
+                        "k": "$playfab_id",
+                        "v": {"kills": "$kill_count", "deaths": "$death_count"},
+                    }
+                },
+                {"$group": {"_id": None, "data": {"$push": "$$ROOT"}}},
+                {"$project": {"_id": 0, "map": {"$arrayToObject": "$data"}}},
+            ]
+            result = self._kills_collection.aggregate(pipeline)
+            first_doc = await result.to_list(length=1)
+            if not first_doc or "map" not in first_doc[0]:
+                raise Exception("Failed to get kills map from aggregation")
+            json_str = json.dumps(first_doc[0]["map"], indent=2)
+            time_now = time.time()
+            ti = int(time_now)
+            file_name = f"kills_export_{ti}.json"
+            async with aio_open(f"./persist/{file_name}", "w") as f:
+                await f.write(json_str)
+            file = discord.File(
+                fp=io.BytesIO(json_str.encode("utf-8")),
+                filename=file_name,
+                description="Exported kills data",
+            )
+            await ctx.message.reply(
+                f"Exported kills. Also written to `./persist/{file_name}`", file=file
+            )
+        except Exception as e:
+            logger.error(f"Failed to export kills: {e}")
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(type(e)), inline=False)
+            embed.add_field(
+                name="Hint",
+                value="Check logs for details, and check folder `./persist/`, file might have been created there",
+                inline=False,
+            )
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
