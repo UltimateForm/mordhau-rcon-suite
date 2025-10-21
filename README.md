@@ -440,6 +440,7 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
   - usage: `.db chg_name <plafayb_id> <new_name>`
 - **metadata**: show metadata of db
 - **export_playtime**: export playtime data as json, compatible with server side mods such as NightV's Playtime. Will also write the export to `./persist/` folder
+- **export_kills**: export kills/deaths data as json. Will also write the export to `./persist/` folder
 
 
 #### Admin Season config commands (.season)
