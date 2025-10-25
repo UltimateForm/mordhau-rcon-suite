@@ -60,6 +60,7 @@ If you need custom changes please reach out to me on discord or create an issue.
   - [Migration to NightV's mods](#migration-to-nightvs-mods)
     - [Exporting playtime data](#exporting-playtime-data)
     - [Exporting playtime and custom ranks](#exporting-playtime-and-custom-ranks)
+    - [Exporting both kills and playtime](#exporting-both-kills-and-playtime)
     - [Post-migration](#post-migration)
   - [IMPORTANT NOTES](#important-notes)
 
@@ -440,6 +441,8 @@ I will not tell you here how to setup a discord bot, there's already plenty of g
   - usage: `.db chg_name <plafayb_id> <new_name>`
 - **metadata**: show metadata of db
 - **export_playtime**: export playtime data as json, compatible with server side mods such as NightV's Playtime. Will also write the export to `./persist/` folder
+- **export_kills**: export kills/deaths data as json. Will also write the export to `./persist/` folder
+- **export_all**: export both kills and playtime into a single json file with root {"kills": ..., "playtime": ...}. Will also write the export to `./persist/` folder
 
 
 #### Admin Season config commands (.season)
@@ -621,6 +624,24 @@ sample export:
       "Rank": "FFAer"
     }
   ]
+}
+```
+
+### Exporting both kills and playtime
+
+- run admin discord command `.db export_all` this will export your kills (kills/deaths) and playtime collections into a single json file with the following root structure which can be useful for bulk backups or custom import tooling.
+
+sample export:
+```json
+{
+  "kills": {
+    "D1230AA0B615K12E": { "kills": 10, "deaths": 2 },
+    "30C4D00A3A64CC50": { "kills": 2, "deaths": 1 }
+  },
+  "playtime": {
+    "D1230AA0B615K12E": 10.05,
+    "30C4D00A3A64CC50": 2.0166666666666666
+  }
 }
 ```
 
