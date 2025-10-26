@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 from motor.motor_asyncio import AsyncIOMotorCollection
 from common import logger
+import os
 from config_client.models import BotConfig
 from common.discord import (
     BotHelper,
@@ -39,6 +40,66 @@ class DcDbConfig(commands.Cog):
     def make_embed(self, ctx: commands.Context):
         embed = common_make_embed(str(ctx.command), color=discord.Colour(2899536))
         return embed
+
+    async def _aggregate_playtime_record(self) -> dict:
+        pipeline = [
+            {
+                "$project": {
+                    "_id": 0,
+                    "k": "$playfab_id",
+                    "v": {"$divide": ["$minutes", 60]},
+                }
+            },
+            {"$group": {"_id": None, "data": {"$push": "$$ROOT"}}},
+            {"$project": {"_id": 0, "map": {"$arrayToObject": "$data"}}},
+        ]
+        result = self._playtime_collection.aggregate(pipeline)
+        first_doc = await result.to_list(length=1)
+        if not first_doc or "map" not in first_doc[0]:
+            raise Exception("Failed to get playtime map from aggregation")
+        return first_doc[0]["map"]
+
+    async def _aggregate_kills_record(self) -> dict:
+        pipeline = [
+            {
+                "$project": {
+                    "_id": 0,
+                    "k": "$playfab_id",
+                    "v": {"k": "$kill_count", "d": "$death_count"},
+                }
+            },
+            {"$group": {"_id": None, "data": {"$push": "$$ROOT"}}},
+            {"$project": {"_id": 0, "map": {"$arrayToObject": "$data"}}},
+        ]
+        result = self._kills_collection.aggregate(pipeline)
+        first_doc = await result.to_list(length=1)
+        if not first_doc or "map" not in first_doc[0]:
+            raise Exception("Failed to get kills map from aggregation")
+        return first_doc[0]["map"]
+
+    async def _respond_with_written_file(
+        self,
+        ctx: commands.Context,
+        record: object,
+        filename_prefix: str,
+        description: str,
+    ) -> None:
+        json_str = json.dumps(record, indent=2)
+        ti = int(time.time())
+        file_name = f"{filename_prefix}_{ti}.json"
+        persist_path = f"./persist/{file_name}"
+        # ensure persist dir exists
+        os.makedirs("./persist", exist_ok=True)
+        async with aio_open(persist_path, "w") as f:
+            await f.write(json_str)
+        file = discord.File(
+            fp=io.BytesIO(json_str.encode("utf-8")),
+            filename=file_name,
+            description=description,
+        )
+        await ctx.message.reply(
+            f"{description}. Also written to `{persist_path}`", file=file
+        )
 
     @commands.group(invoke_without_command=False, description="DB admin commands")
     async def db(self, ctx: commands.Context):
@@ -120,38 +181,71 @@ class DcDbConfig(commands.Cog):
             return
         embed = self.make_embed(ctx)
         try:
-            result = self._playtime_collection.aggregate(
-                [
-                    {
-                        "$project": {
-                            "_id": 0,
-                            "k": "$playfab_id",
-                            "v": {"$divide": ["$minutes", 60]},
-                        }
-                    },
-                    {"$group": {"_id": None, "data": {"$push": "$$ROOT"}}},
-                    {"$project": {"_id": 0, "map": {"$arrayToObject": "$data"}}},
-                ]
-            )
-            first_doc = await result.to_list(length=1)
-            if not first_doc or "map" not in first_doc[0]:
-                raise Exception("Failed to get playtime map from aggregation")
-            json_str = json.dumps(first_doc[0]["map"], indent=2)
-            time_now = time.time()
-            ti = int(time_now)
-            file_name = f"playtime_export_{ti}.json"
-            async with aio_open(f"./persist/{file_name}", "w") as f:
-                await f.write(json_str)
-            file = discord.File(
-                fp=io.BytesIO(json_str.encode("utf-8")),
-                filename=file_name,
-                description="Exported playtime data",
-            )
-            await ctx.message.reply(
-                f"Exported playtime. Also written to `./persist/{file_name}`", file=file
+            playtime_record = await self._aggregate_playtime_record()
+            await self._respond_with_written_file(
+                ctx, playtime_record, "playtime_export", "Exported playtime data"
             )
         except Exception as e:
             logger.error(f"Failed to export playtime: {e}")
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(type(e)), inline=False)
+            embed.add_field(
+                name="Hint",
+                value="Check logs for details, and check folder `./persist/`, file might have been created there",
+                inline=False,
+            )
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
+
+    @db.command(
+        description="export kills/deaths data as json. Will also write the export to ./persist/ folder"
+    )
+    async def export_kills(self, ctx: commands.Context):
+        if (
+            self._cfg.config_bot_channel
+            and ctx.channel.id != self._cfg.config_bot_channel
+        ):
+            return
+        embed = self.make_embed(ctx)
+        try:
+            kills_recor = await self._aggregate_kills_record()
+            await self._respond_with_written_file(
+                ctx, kills_recor, "kills_export", "Exported kills data"
+            )
+        except Exception as e:
+            logger.error(f"Failed to export kills: {e}")
+            embed.add_field(name="Success", value=str(False), inline=False)
+            embed.add_field(name="Error", value=str(type(e)), inline=False)
+            embed.add_field(
+                name="Hint",
+                value="Check logs for details, and check folder `./persist/`, file might have been created there",
+                inline=False,
+            )
+            embed.color = 15548997  # red
+            await ctx.message.reply(embed=embed)
+
+    @db.command(
+        description="export both kills and playtime into a single json file. Will also write the export to ./persist/ folder"
+    )
+    async def export_all(self, ctx: commands.Context):
+        if (
+            self._cfg.config_bot_channel
+            and ctx.channel.id != self._cfg.config_bot_channel
+        ):
+            return
+        embed = self.make_embed(ctx)
+        try:
+            playmap = await self._aggregate_playtime_record()
+            killsmap = await self._aggregate_kills_record()
+            combined = {"kills": killsmap, "playtime": playmap}
+            await self._respond_with_written_file(
+                ctx,
+                combined,
+                "kills_playtime_export",
+                "Exported kills and playtime data",
+            )
+        except Exception as e:
+            logger.error(f"Failed to export both: {e}")
             embed.add_field(name="Success", value=str(False), inline=False)
             embed.add_field(name="Error", value=str(type(e)), inline=False)
             embed.add_field(
