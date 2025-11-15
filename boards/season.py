@@ -1,4 +1,3 @@
-from xmlrpc.client import Boolean
 import discord
 from motor.motor_asyncio import (
     AsyncIOMotorCollection,
@@ -26,7 +25,7 @@ class SeasonScoreboard(Board):
 
     @property
     def active(self) -> bool:
-        return Boolean(self._season_cfg) and self._season_cfg.is_active
+        return bool(self._season_cfg) and self._season_cfg.is_active
 
     @property
     def season_name(self) -> str:
@@ -107,7 +106,7 @@ class SeasonScoreboard(Board):
                 {f"season.{self._season_cfg.name}": {"$exists": True}}
             )
             .sort(f"season.{self._season_cfg.name}.kill_count", -1)
-            .limit(20)
+            .limit(50)
             .to_list()
         )
         ascii_table = "```No players have played this season```"
