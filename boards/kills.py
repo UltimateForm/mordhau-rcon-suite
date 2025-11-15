@@ -72,7 +72,7 @@ class KillsScoreboard(Board):
         top_20_items: list[dict] = (
             await self._kills_collection.find()
             .sort("kill_count", -1)
-            .limit(20)
+            .limit(50)
             .to_list()
         )
         backtask(self.update_achieved_ranks(top_20_items))
@@ -90,7 +90,7 @@ class KillsScoreboard(Board):
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
         embed = discord.Embed(
-            title="<:ape_skull:1310131648234262538> KILL LEADERBOARD (TOP 20) <:death_among_us:1310131176228519976>",
+            title="<:ape_skull:1310131648234262538> KILL LEADERBOARD (TOP 50) <:death_among_us:1310131176228519976>",
             description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
             color=discord.Colour(int("ff0000", 16)),
         )

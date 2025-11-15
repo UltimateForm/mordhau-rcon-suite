@@ -106,7 +106,7 @@ class SeasonScoreboard(Board):
                 {f"season.{self._season_cfg.name}": {"$exists": True}}
             )
             .sort(f"season.{self._season_cfg.name}.kill_count", -1)
-            .limit(20)
+            .limit(50)
             .to_list()
         )
         ascii_table = "```No players have played this season```"

@@ -35,7 +35,7 @@ class PlayTimeScoreboard(Board):
         top_20_items: list[dict] = (
             await self._playtime_collection.find()
             .sort("minutes", -1)
-            .limit(20)
+            .limit(50)
             .to_list()
         )
         ascii_table = (
@@ -57,7 +57,7 @@ class PlayTimeScoreboard(Board):
         current_time = round(datetime.now(timezone.utc).timestamp())
         time_sig = f"Last updated: <t:{current_time}> (<t:{current_time}:R>)"
         embed = discord.Embed(
-            title="<:ClockofDestiny:1310130670798110810> PLAYTIME LEADERBOARD (TOP 20) <:ClockofDestiny:1310130670798110810>",
+            title="<:ClockofDestiny:1310130670798110810> PLAYTIME LEADERBOARD (TOP 50) <:ClockofDestiny:1310130670798110810>",
             description="\n".join([time_sig, self.announcement]) + "\n" + ascii_table,
             color=discord.Colour(int("1eff00", 16)),
         )
