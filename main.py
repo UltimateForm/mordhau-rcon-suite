@@ -30,6 +30,7 @@ from config_client.models import BotConfig, PtConfig, SeasonConfig
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorClient
 from typing import Coroutine
 from monitoring.chat_logs import ChatLogs
+from monitoring.login_logs import LoginLogs
 from seasons.dc_config import SeasonAdminCommands
 from seasons.season_controller import SEASON_TOPIC, SeasonWatch
 from dc_db_config.main import DcDbConfig
@@ -230,12 +231,14 @@ class MordhauRconSuite:
         self.tasks.add(self.db_kills.start())
 
     def set_up_monitoring(self):
-        if not self._bot_config.chat_logs_channel:
-            return
-        chat_logs = ChatLogs(
-            self._dc_client, self._bot_config, self._dc_bot, self.rcon_pool
-        )
-        self.chat_events.subscribe(chat_logs)
+        if self._bot_config.chat_logs_channel:
+            chat_logs = ChatLogs(
+                self._dc_client, self._bot_config, self._dc_bot, self.rcon_pool
+            )
+            self.chat_events.subscribe(chat_logs)
+        if self._bot_config.login_logs_channel:
+            login_logs = LoginLogs(self._dc_client, self._bot_config)
+            self.login_events.subscribe(login_logs)
 
     def set_up_db(self):
         db_connection = self._bot_config.db_connection_string
