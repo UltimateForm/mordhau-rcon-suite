@@ -237,7 +237,13 @@ class DcDbConfig(commands.Cog):
         try:
             playmap = await self._aggregate_playtime_record()
             killsmap = await self._aggregate_kills_record()
-            combined = {"kills": killsmap, "playtime": playmap}
+            combined = {}
+            for playfab_id in set(playmap.keys()) | set(killsmap.keys()):
+                combined[playfab_id] = {
+                    "playtime": playmap.get(playfab_id),
+                    "k": killsmap.get(playfab_id, {}).get("k", 0),
+                    "d": killsmap.get(playfab_id, {}).get("d", 0),
+                }
             await self._respond_with_written_file(
                 ctx,
                 combined,
