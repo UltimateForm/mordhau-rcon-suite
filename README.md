@@ -104,8 +104,9 @@ Here's how the config is loaded:
     17. EMBED_FOOTER_ICON (optional, link to image to be added at footer of embed)
     18. KS_ENABLED (optional, 1 for enabled, 0 for disabled, default disabled)
     19. CHAT_LOGS_CHANNEL (optional, channel to post chat logs)
-    20. USE_BULK_LISTENER (optional, 1 for enabled, 0 for disabled, recommended enabled, uses a single RCON connection to track killfeed, chat, login, matchstate events)
-    21. INGAME_PERSISTENT_TITLES_DISABLED (optional, 1 for true, 0 for false, disables ingame persistent titles features, will still work on discord)
+    20. LOGIN_LOGS_CHANNEL (optional, channel to post login/logout logs)
+    21. USE_BULK_LISTENER (optional, 1 for enabled, 0 for disabled, recommended enabled, uses a single RCON connection to track killfeed, chat, login, matchstate events)
+    22. INGAME_PERSISTENT_TITLES_DISABLED (optional, 1 for true, 0 for false, disables ingame persistent titles features, will still work on discord)
 
 ##### example
 
@@ -122,6 +123,8 @@ PLAYTIME_CHANNEL=1941542230754205341
 PLAYTIME_REFRESH_TIME=1800
 KILLS_CHANNEL=1213542630756065341
 KILLS_REFRESH_TIME=1800
+CHAT_LOGS_CHANNEL=1941542230754205341
+LOGIN_LOGS_CHANNEL=1941542230754205341
 ```
 
 
@@ -143,6 +146,7 @@ Template:
   "kills_channel": <type number, channel to post kills/death/ratio scoreboard, read more at #boards>,
   "playtime_channel": <type number, channel to post playtime scoreboard, read more at #boards>,
   "chat_logs_channel": <type number, channel to post chat logs>,
+  "login_logs_channel": <type number, channel to post login/logout logs>,
   "playtime_refresh_time": <type number, time interval in seconds for playtime scoreboard update>,
   "kills_refresh_time": <type number, time interval in seconds for kills/death/ratio scoreboard update>,
   "info_refresh_time": <type, optional, time in seconds to refresh server info card>,
@@ -168,6 +172,8 @@ Template:
   "embed_footer_icon": "https://img.icons8.com/ios-glyphs/1x/github.png",
   "kills_channel": 8975849891383335326,
   "playtime_channel": 1245309379415084945,
+  "chat_logs_channel": 1941542230754205341,
+  "login_logs_channel": 1941542230754205341,
   "playtime_refresh_time": 1800,
   "kills_refresh_time": 1800,
   "info_refresh_time": 10,
